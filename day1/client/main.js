@@ -96,10 +96,17 @@ chatForm.addEventListener('submit', (event) => {
   chatInput.value = '';
 });
 
-/** Blanks the word for guessers, shows it in full to the drawer. */
+/**
+ * Blanks the word for guessers, shows it in full to the drawer. Once the
+ * server starts revealing letters, `hint` carries them and the blanks stay
+ * blank.
+ */
 function wordDisplay(state) {
   if (state.phase === 'drawing') {
     if (state.drawerId === socket.id && myWord) return myWord.toUpperCase().split('').join(' ');
+    if (state.hint) {
+      return state.hint.map((letter) => (letter ? letter.toUpperCase() : '_')).join(' ');
+    }
     return '_ '.repeat(state.wordLength ?? 0).trim();
   }
   if (state.revealedWord) return state.revealedWord.toUpperCase().split('').join(' ');

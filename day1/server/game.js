@@ -19,6 +19,13 @@ const MAX_POINTS_PER_GUESS = 100;
 const MIN_POINTS_PER_GUESS = 10;
 const POINTS_PER_PLAYER_GUESSED = 25;
 
+/**
+ * Fractions of the turn still remaining when a letter of the word is revealed.
+ * Two steps keeps a 60s turn from becoming a giveaway while still rescuing a
+ * room that has run out of ideas.
+ */
+const HINT_STEPS = [0.6, 0.3];
+
 /** @type {{ getPlayers: (code: string) => Array<{id: string, name: string}>, onState: (code: string) => void, onChat: (code: string, message: object) => void, sendWord: (playerId: string, word: string|null) => void }} */
 let deps = null;
 
@@ -45,6 +52,18 @@ function pickWord(used) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+/**
+ * The word with all but `count` of its letters blanked out, as an array of
+ * characters and nulls. Guessers get this instead of the word itself.
+ */
+function maskWord(word, count) {
+  const indices = new Set();
+  while (indices.size < count) {
+    indices.add(Math.floor(Math.random() * word.length));
+  }
+  return word.split('').map((letter, i) => (indices.has(i) ? letter : null));
+}
+
 function clearTimer(game) {
   if (game.timer) {
     clearTimeout(game.timer);
@@ -64,6 +83,7 @@ function publicState(code) {
     totalTurns: game.totalTurns,
     drawerId: game.drawerId,
     wordLength: game.phase === 'drawing' ? game.word.length : null,
+    hint: game.phase === 'drawing' ? maskWord(game.word, game.hintsGiven) : null,
     revealedWord: game.phase === 'drawing' ? null : game.word,
     msLeft: Math.max(0, game.endsAt - Date.now()),
     turnMs: TURN_MS,
@@ -108,6 +128,8 @@ function start(code) {
     guessed: new Set(),
     scores: new Map(players.map((player) => [player.id, 0])),
     timer: null,
+    hintsGiven: 0,
+    hintTimers: [],
   });
 
   beginTurn(code);
@@ -147,11 +169,32 @@ function beginTurn(code) {
   clearTimer(game);
   game.timer = setTimeout(() => endTurn(code, 'time ran out'), TURN_MS);
 
+  game.hintsGiven = 0;
+  clearHintTimers(game);
+  for (const fraction of HINT_STEPS) {
+    game.hintTimers.push(setTimeout(() => revealHint(code), TURN_MS * (1 - fraction)));
+  }
+
   // Only the drawer ever learns the word.
   deps.sendWord(game.drawerId, game.word);
 
   const drawer = deps.getPlayers(code).find((player) => player.id === game.drawerId);
   deps.onChat(code, { kind: 'system', text: `Turn ${game.turn}/${game.totalTurns}: ${drawer?.name ?? '?'} is drawing.` });
+  deps.onState(code);
+}
+
+function clearHintTimers(game) {
+  for (const timer of game.hintTimers) clearTimeout(timer);
+  game.hintTimers = [];
+}
+
+/** Reveals one more letter to the guessers and says so in chat. */
+function revealHint(code) {
+  const game = games.get(code);
+  if (!game || game.phase !== 'drawing') return;
+
+  game.hintsGiven += 1;
+  deps.onChat(code, { kind: 'system', text: 'A letter has been revealed.' });
   deps.onState(code);
 }
 
