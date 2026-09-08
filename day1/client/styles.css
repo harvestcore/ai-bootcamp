@@ -157,6 +157,13 @@ input + .hint {
   gap: 1rem;
 }
 
+#copy-code {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
 .room-header h2 {
   margin: 0;
 }
