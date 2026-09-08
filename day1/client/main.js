@@ -47,6 +47,7 @@ startButton.addEventListener('click', () => socket.emit(EVENTS.CLIENT_START));
 
 Board.init(el('board'), (op) => socket.emit(EVENTS.CLIENT_DRAW, { op }));
 el('clear').addEventListener('click', () => Board.clear());
+el('skip').addEventListener('click', () => socket.emit(EVENTS.CLIENT_SKIP));
 
 /** Builds the colour and brush pickers from the shared palette. */
 function buildTools() {

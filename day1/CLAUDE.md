@@ -91,7 +91,8 @@ running server. Keep it that way.
 Three subsystems share one room state; keep them separate in the code:
 
 1. **Room & round lifecycle** (**built**) — join/leave by code, turn rotation, word choice, the 60s
-   timer, scoring, and ending the game when players drop below two.
+   timer, scoring, and ending the game when players drop below two. The drawer may swap the word
+   with `CLIENT_SKIP` (`SKIPS_PER_TURN` in `game.js`); only the drawer ever receives the new one.
 2. **Drawing sync** (**built**) — the drawer emits _ops_ (stroke deltas), never canvas frames.
    `canvas.js` stores the turn's ops; replaying them in order reproduces the drawing, which is how a
    late joiner catches up (`ROOM_CANVAS` on join) and how `client/board.js` repaints on resize.

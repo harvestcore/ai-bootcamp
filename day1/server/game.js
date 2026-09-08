@@ -18,6 +18,8 @@ const MIN_PLAYERS = 2;
 const MAX_POINTS_PER_GUESS = 100;
 const MIN_POINTS_PER_GUESS = 10;
 const POINTS_PER_PLAYER_GUESSED = 25;
+/** How many times the drawer may swap the word in a turn. */
+const SKIPS_PER_TURN = 1;
 
 /** @type {{ getPlayers: (code: string) => Array<{id: string, name: string}>, onState: (code: string) => void, onChat: (code: string, message: object) => void, sendWord: (playerId: string, word: string|null) => void }} */
 let deps = null;
@@ -108,6 +110,7 @@ function start(code) {
     guessed: new Set(),
     scores: new Map(players.map((player) => [player.id, 0])),
     timer: null,
+    skipsUsed: 0,
   });
 
   beginTurn(code);
@@ -213,6 +216,25 @@ function handleGuess(code, playerId, text) {
   return { kind: 'correct' };
 }
 
+/**
+ * Swaps the drawer's word for a different one. Some words are much harder to
+ * draw than others, and a stuck drawer wastes the whole turn for everyone.
+ */
+function skipWord(code) {
+  const game = games.get(code);
+  if (!game) return { error: 'No game is running.' };
+  if (game.skipsUsed >= SKIPS_PER_TURN) return { error: 'You have already skipped this turn.' };
+
+  game.skipsUsed += 1;
+  game.word = pickWord(game.usedWords);
+  game.usedWords.add(game.word);
+
+  deps.sendWord(game.drawerId, game.word);
+  deps.onChat(code, { kind: 'system', text: 'The drawer swapped the word.' });
+  deps.onState(code);
+  return { ok: true };
+}
+
 /** Called when a player disconnects; keeps the turn from stalling on a ghost. */
 function playerLeft(code, playerId) {
   const game = games.get(code);
@@ -256,5 +278,6 @@ module.exports = {
   isDrawer,
   playerLeft,
   publicState,
+  skipWord,
   start,
 };

@@ -14,6 +14,20 @@ If the authenticated account **is** the PR author:
 - Everything posts as that user, not as Claude. Say so before posting: the user
   may expect the review to be attributed to a tool.
 
+## Pre-flight: approval is required
+
+Do not run the POST until the user has approved the exact comment set (phase 3a of
+`SKILL.md`). Building the payload is fine beforehand, and it helps: dump it and read
+back the anchors and suggestion bodies so what you present matches what would be
+sent, byte for byte.
+
+```sh
+node -e "for (const c of require('./review.json').comments) console.log(c.path, c.start_line ?? c.line, '->', c.line)"
+```
+
+Post only the approved comments. If approval covered four of five, delete the fifth
+from the payload rather than posting it and apologising after.
+
 ## Build one payload, post once
 
 `gh pr review` cannot carry inline comments, so use the API with a `comments`
@@ -68,8 +82,12 @@ The block replaces the entire anchored range, so it must be the complete
 replacement: every line, with **exact** original indentation. An empty block
 deletes the range.
 
-Overlapping suggestions on the same lines conflict; if two findings share lines,
-write one comment covering both.
+**One finding per anchor range.** Two suggestion blocks that overlap conflict, and
+GitHub will not apply both. When two findings sit in the same function, give each a
+non-overlapping line range rather than folding them into one comment: on a nine line
+function that meant anchoring the guard clauses and the body separately, so each
+suggestion stayed independently applicable. Fold two findings into one comment only
+when they genuinely need the same lines rewritten.
 
 ## Verify after posting
 
