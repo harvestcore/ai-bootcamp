@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Draw and Guess</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Draw and Guess</h1>
+
+      <section id="join" class="card">
+        <h2>Join a room</h2>
+        <form id="join-form" autocomplete="off">
+          <label for="name">Your name</label>
+          <input id="name" name="name" maxlength="16" placeholder="Ana" required />
+
+          <label for="room">Room code</label>
+          <input id="room" name="room" maxlength="4" placeholder="ABCD" />
+          <p class="hint">Leave it empty to create a new room.</p>
+
+          <button type="submit">Join</button>
+        </form>
+      </section>
+
+      <section id="room-view" hidden>
+        <div class="card">
+          <header class="room-header">
+            <h2>Room <span id="room-code" class="code"></span></h2>
+            <span id="turn-label" class="muted"></span>
+          </header>
+
+          <div id="stage" class="stage">
+            <p id="word" class="word"></p>
+            <p id="status" class="muted"></p>
+            <div class="timer"><div id="timer-bar" class="timer-bar"></div></div>
+          </div>
+
+          <canvas id="board" class="board" aria-label="Drawing board"></canvas>
+
+          <div id="tools" class="tools" hidden>
+            <div id="colours" class="colours" role="group" aria-label="Colour"></div>
+            <div id="widths" class="widths" role="group" aria-label="Brush size"></div>
+            <button id="clear" type="button" class="ghost">Clear</button>
+          </div>
+
+          <button id="start" type="button" hidden>Start game</button>
+          <p class="hint" id="start-hint" hidden></p>
+        </div>
+
+        <div class="card">
+          <h3>Players (<span id="player-count">0</span>)</h3>
+          <ul id="players"></ul>
+        </div>
+
+        <div class="card">
+          <h3>Chat</h3>
+          <ul id="chat" class="chat"></ul>
+          <form id="chat-form" autocomplete="off">
+            <input id="chat-input" maxlength="120" placeholder="Type your guess…" />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+      </section>
+
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <section id="offline" class="card offline" hidden>
+        <h2>No server</h2>
+        <p id="offline-detail"></p>
+        <form id="server-form" autocomplete="off">
+          <label for="server-url">Game server address</label>
+          <input id="server-url" type="url" placeholder="https://my-game.example.com" required />
+          <button type="submit">Connect</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="socket.io.min.js"></script>
+    <script src="shared/events.js"></script>
+    <script src="shared/draw.js"></script>
+    <script src="board.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>

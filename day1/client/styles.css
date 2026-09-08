@@ -1,0 +1,327 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f6f4;
+  --card: #ffffff;
+  --ink: #1c1b19;
+  --muted: #6b6862;
+  --line: #dedbd4;
+  --accent: #2f6f4f;
+  --danger: #a5342a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17181a;
+    --card: #202225;
+    --ink: #ececea;
+    --muted: #9b9891;
+    --line: #33363a;
+    --accent: #6bbd8f;
+    --danger: #e08b80;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.app {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin-top: 0;
+}
+
+h3 {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
+#room {
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-variant-numeric: tabular-nums;
+}
+
+button {
+  width: 100%;
+  padding: 0.6rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.hint {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Pull up only under an input, which already carries its own bottom margin. */
+input + .hint {
+  margin-top: -0.5rem;
+}
+
+.error {
+  margin: 0.5rem 0 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+
+#players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#players li {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+#players li.is-you::after {
+  content: " (tú)";
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* --- room layout --- */
+
+#room-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.room-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.room-header h2 {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.stage {
+  text-align: center;
+  padding: 0.5rem 0 0;
+}
+
+.word {
+  margin: 0.25rem 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  min-height: 1.6em;
+}
+
+.timer {
+  height: 6px;
+  margin-top: 0.75rem;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.timer-bar {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 200ms linear;
+}
+
+#players li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Scoped to the list: a chat message li also carries class "chat" (its kind). */
+ul.chat {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem;
+  height: 11rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--bg);
+  font-size: 0.9rem;
+}
+
+ul.chat li {
+  padding: 0.15rem 0;
+  overflow-wrap: anywhere;
+}
+
+ul.chat li.system {
+  color: var(--muted);
+  font-style: italic;
+}
+
+ul.chat li.correct {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+#chat-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#chat-form input {
+  margin: 0;
+}
+
+#chat-form button {
+  width: auto;
+  padding: 0.55rem 1rem;
+}
+
+/* --- drawing board --- */
+
+.board {
+  display: block;
+  width: 100%;
+  margin-top: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  touch-action: none; /* let the pointer draw instead of scrolling the page */
+  cursor: not-allowed;
+}
+
+.board.is-drawable {
+  cursor: crosshair;
+  border-color: var(--accent);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.colours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch.selected {
+  border-color: var(--ink);
+  transform: scale(1.15);
+}
+
+.widths {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.brush {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.brush.selected {
+  border-color: var(--accent);
+  background: var(--card);
+}
+
+.brush span {
+  display: block;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+button.ghost {
+  width: auto;
+  margin-left: auto;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
