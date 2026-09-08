@@ -153,6 +153,10 @@ io.on('connection', (socket) => {
       sendChat(code, { kind: 'correct', text: `${player.name} guessed it!` });
       return;
     }
+    if (verdict.kind === 'close') {
+      sendChat(code, { kind: 'close', text: `${player.name}: ${text} — so close!` });
+      return;
+    }
     sendChat(code, { kind: 'chat', name: player.name, text });
   });
 

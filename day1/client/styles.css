@@ -223,6 +223,11 @@ ul.chat li.system {
   font-style: italic;
 }
 
+ul.chat li.close {
+  color: #b8860b;
+  font-style: italic;
+}
+
 ul.chat li.correct {
   color: var(--accent);
   font-weight: 600;

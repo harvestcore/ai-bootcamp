@@ -25,7 +25,7 @@
 
     /** server -> the drawer only: { word } — never broadcast */
     ROOM_WORD: 'room:word',
-    /** server -> room: { kind: 'chat'|'system'|'correct', name?, text } */
+    /** server -> room: { kind: 'chat'|'system'|'correct'|'close', name?, text } */
     CHAT_MESSAGE: 'chat:message',
 
     /** client -> server: { op } — a stroke delta; only the drawer may send */

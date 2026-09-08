@@ -100,7 +100,9 @@ Three subsystems share one room state; keep them separate in the code:
    since a cleared board replays as blank. The drawer's own strokes are drawn locally and relayed
    with `socket.to` (not `io.to`), so they are never echoed back.
 3. **Chat & guessing** (**built**) — chat messages double as guesses. A correct guess is broadcast as
-   `kind: 'correct'` with the player's name and never as plain chat, which would leak the word.
+   `kind: 'correct'` with the player's name and never as plain chat, which would leak the word. A guess
+   within `CLOSE_ENOUGH` edits of the word comes back as `kind: 'close'` instead, so a typo does not
+   read as a wrong answer.
 
 Ground rules that cut across all three:
 
