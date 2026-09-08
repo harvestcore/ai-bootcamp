@@ -11,3 +11,4 @@ See:
   - https://github.com/harvestcore/ai-bootcamp/pull/5
   - https://github.com/harvestcore/ai-bootcamp/pull/6
   - https://github.com/harvestcore/ai-bootcamp/pull/7
+- Created a fork: https://github.com/harvestcore/super_inventory
