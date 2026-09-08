@@ -43,6 +43,13 @@ joinForm.addEventListener('submit', (event) => {
 
 startButton.addEventListener('click', () => socket.emit(EVENTS.CLIENT_START));
 
+const copyButton = el('copy-code');
+copyButton.addEventListener('click', async () => {
+  await navigator.clipboard.writeText(el('room-code').textContent);
+  copyButton.textContent = 'Copied';
+  setTimeout(() => { copyButton.textContent = 'Copy'; }, 1500);
+});
+
 // --- board ---
 
 Board.init(el('board'), (op) => socket.emit(EVENTS.CLIENT_DRAW, { op }));
