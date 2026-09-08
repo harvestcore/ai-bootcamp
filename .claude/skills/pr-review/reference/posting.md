@@ -68,8 +68,12 @@ The block replaces the entire anchored range, so it must be the complete
 replacement: every line, with **exact** original indentation. An empty block
 deletes the range.
 
-Overlapping suggestions on the same lines conflict; if two findings share lines,
-write one comment covering both.
+**One finding per anchor range.** Two suggestion blocks that overlap conflict, and
+GitHub will not apply both. When two findings sit in the same function, give each a
+non-overlapping line range rather than folding them into one comment: on a nine line
+function that meant anchoring the guard clauses and the body separately, so each
+suggestion stayed independently applicable. Fold two findings into one comment only
+when they genuinely need the same lines rewritten.
 
 ## Verify after posting
 

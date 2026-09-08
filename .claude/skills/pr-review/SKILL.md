@@ -42,8 +42,8 @@ Reconcile all of this before reading a line of code:
 
 ## 1. Analyse
 
-Three passes over the reconciled diff. They feed the document in phase 2, so keep
-notes with file paths and line numbers as you go.
+Three passes over the reconciled diff, then a verification step. Keep notes with
+file paths and line numbers as you go: they feed the document in phase 2.
 
 **Scope.** What the PR is trying to do, what it changes, and what it deliberately
 does not touch. Hold this to three sentences: the limit forces a decision about what
@@ -60,6 +60,29 @@ files, a linter, and CI workflows on every branch. When the answer is "no test" 
 everything, the useful question becomes what would actually catch each one (a unit
 test, an HTML validator, loading the page, a human reading the copy). Flag any
 finding that even a well-written test of the changed module would miss.
+
+**Verify before writing anything down.** Where a module can be driven cheaply, run
+it instead of reasoning about it. A finding reached by reading alone is often subtly
+wrong in a way that survives into the document: a skip-word bug once read as "the
+active secret leaks", and driving the module showed the active secret is never
+exposed at all (the field in question is null in that phase), so the real defect was
+a false reveal plus a value burned from a pool. State what you observed, not what
+the code looks like it does.
+
+Modules written with injected dependencies exist for this. In this repo `game.js`
+takes them, so a whole round costs four stub functions:
+
+```js
+game.init({
+  getPlayers: () => players,
+  onState: () => {},
+  onChat: (code, message) => log.push(message.text),
+  sendWord: (id, word) => { priv[id] = word; },
+});
+```
+
+Call the teardown (`forget(code)` here) at the end, or the round timers keep the
+process alive and the script looks like it hung.
 
 ## 2. Write the review document
 
