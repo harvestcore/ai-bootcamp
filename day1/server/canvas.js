@@ -76,6 +76,17 @@ function append(code, raw) {
   return op;
 }
 
+/**
+ * Removes the most recent stroke so the drawer can take back a mistake.
+ * Returns false when there is nothing left to undo.
+ */
+function undo(code) {
+  const ops = boards.get(code);
+  if (!ops || ops.length === 0) return false;
+  ops.pop();
+  return true;
+}
+
 function history(code) {
   return boards.get(code) ?? [];
 }
@@ -85,4 +96,4 @@ function clear(code) {
   boards.delete(code);
 }
 
-module.exports = { append, clear, history };
+module.exports = { append, clear, history, undo };

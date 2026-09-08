@@ -133,6 +133,14 @@ io.on('connection', (socket) => {
     socket.to(code).emit(EVENTS.ROOM_DRAW, { op });
   });
 
+  socket.on(EVENTS.CLIENT_UNDO, () => {
+    const code = rooms.roomCodeOf(socket.id);
+    if (!code) return;
+
+    if (!canvas.undo(code)) return;
+    io.to(code).emit(EVENTS.ROOM_UNDO);
+  });
+
   socket.on(EVENTS.CLIENT_CHAT, (payload = {}) => {
     const code = rooms.roomCodeOf(socket.id);
     if (!code) return;

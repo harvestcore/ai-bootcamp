@@ -47,6 +47,10 @@ startButton.addEventListener('click', () => socket.emit(EVENTS.CLIENT_START));
 
 Board.init(el('board'), (op) => socket.emit(EVENTS.CLIENT_DRAW, { op }));
 el('clear').addEventListener('click', () => Board.clear());
+el('undo').addEventListener('click', () => {
+  Board.undo();
+  socket.emit(EVENTS.CLIENT_UNDO);
+});
 
 /** Builds the colour and brush pickers from the shared palette. */
 function buildTools() {
@@ -187,6 +191,8 @@ socket.on(EVENTS.ROOM_WORD, ({ word }) => {
 socket.on(EVENTS.ROOM_DRAW, ({ op }) => Board.apply(op));
 
 socket.on(EVENTS.ROOM_CANVAS, ({ ops }) => Board.reset(ops));
+
+socket.on(EVENTS.ROOM_UNDO, () => Board.undo());
 
 socket.on(EVENTS.CHAT_MESSAGE, (message) => {
   const item = document.createElement('li');

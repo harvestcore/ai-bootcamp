@@ -34,5 +34,9 @@
     ROOM_DRAW: 'room:draw',
     /** server -> one client: { ops } — the turn so far, for catching up */
     ROOM_CANVAS: 'room:canvas',
+    /** client -> server: take back the drawer's most recent stroke */
+    CLIENT_UNDO: 'client:undo',
+    /** server -> room: the most recent stroke is gone; drop it and repaint */
+    ROOM_UNDO: 'room:undo',
   };
 });
