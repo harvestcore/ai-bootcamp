@@ -188,6 +188,14 @@ window.Board = (function () {
       width = value;
     },
 
+    /** Drops the most recent stroke and repaints from what is left. */
+    undo() {
+      if (ops.length === 0) return;
+      ops.pop();
+      lastPoint = null;
+      repaint();
+    },
+
     /** Asks the server to clear; the echo repaints everyone, including us. */
     clear() {
       const op = { clear: true };

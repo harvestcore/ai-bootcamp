@@ -98,7 +98,8 @@ Three subsystems share one room state; keep them separate in the code:
    Coordinates are normalised 0..1 and brush widths scale from `REFERENCE_WIDTH`, so every player
    sees the same drawing at any canvas size. A clear op empties the history rather than being stored,
    since a cleared board replays as blank. The drawer's own strokes are drawn locally and relayed
-   with `socket.to` (not `io.to`), so they are never echoed back.
+   with `socket.to` (not `io.to`), so they are never echoed back. The drawer can take back the last
+   stroke with `CLIENT_UNDO`; the server pops it from the history and tells the room to repaint.
 3. **Chat & guessing** (**built**) — chat messages double as guesses. A correct guess is broadcast as
    `kind: 'correct'` with the player's name and never as plain chat, which would leak the word.
 
