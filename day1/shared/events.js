@@ -22,6 +22,8 @@
     CLIENT_START: 'client:start',
     /** client -> server: { text } — chat, which doubles as a guess */
     CLIENT_CHAT: 'client:chat',
+    /** client -> server: the drawer wants a different word */
+    CLIENT_SKIP: 'client:skip',
 
     /** server -> the drawer only: { word } — never broadcast */
     ROOM_WORD: 'room:word',

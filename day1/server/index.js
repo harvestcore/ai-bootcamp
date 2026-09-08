@@ -119,6 +119,14 @@ io.on('connection', (socket) => {
     if (result.error) socket.emit(EVENTS.ROOM_ERROR, { message: result.error });
   });
 
+  socket.on(EVENTS.CLIENT_SKIP, () => {
+    const code = rooms.roomCodeOf(socket.id);
+    if (!code) return;
+
+    const result = game.skipWord(code);
+    if (result.error) socket.emit(EVENTS.ROOM_ERROR, { message: result.error });
+  });
+
   socket.on(EVENTS.CLIENT_DRAW, (payload = {}) => {
     const code = rooms.roomCodeOf(socket.id);
     if (!code) return;
