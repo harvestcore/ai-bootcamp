@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project
 
 A browser multiplayer **draw-and-guess** game: players join a room by code, one player
@@ -56,7 +54,7 @@ Consequences to preserve when editing the client:
 - **`ALLOWED_ORIGINS`** (comma-separated) is what lets a Pages-hosted client reach the server. It is
   enforced twice on purpose: `cors` for the polling transport, and `allowRequest` for the WebSocket
   upgrade, which `cors` does not cover. A request with no Origin header is still allowed through, so
-  this locks out other *websites*, not other clients.
+  this locks out other _websites_, not other clients.
 
 See DEPLOY.md for the user-facing steps.
 
@@ -94,7 +92,7 @@ Three subsystems share one room state; keep them separate in the code:
 
 1. **Room & round lifecycle** (**built**) — join/leave by code, turn rotation, word choice, the 60s
    timer, scoring, and ending the game when players drop below two.
-2. **Drawing sync** (**built**) — the drawer emits *ops* (stroke deltas), never canvas frames.
+2. **Drawing sync** (**built**) — the drawer emits _ops_ (stroke deltas), never canvas frames.
    `canvas.js` stores the turn's ops; replaying them in order reproduces the drawing, which is how a
    late joiner catches up (`ROOM_CANVAS` on join) and how `client/board.js` repaints on resize.
    Coordinates are normalised 0..1 and brush widths scale from `REFERENCE_WIDTH`, so every player
