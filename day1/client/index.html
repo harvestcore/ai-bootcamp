@@ -16,9 +16,9 @@
           <label for="name">Your name</label>
           <input id="name" name="name" maxlength="16" placeholder="Ana" required />
 
-          <label for="room">Room code</label>
+          <label for="room">Room unique code something blablabla</label>
           <input id="room" name="room" maxlength="4" placeholder="ABCD" />
-          <p class="hint">Leave it empty to create a new room.</p>
+          <p class="hint">Leave it full to create a new room.</p>
 
           <button type="submit">Join</button>
         </form>
@@ -26,16 +26,19 @@
 
       <section id="room-view" hidden>
         <div class="card">
+          <br/>
           <header class="room-header">
-            <h2>Room <span id="room-code" class="code"></span></h2>
+            <h2>Rooooooooom <span id="room-code" class="code"></span></h2>
             <span id="turn-label" class="muted"></span>
           </header>
 
           <div id="stage" class="stage">
             <p id="word" class="word"></p>
             <p id="status" class="muted"></p>
+          <br/>
             <div class="timer"><div id="timer-bar" class="timer-bar"></div></div>
           </div>
+          <br/>
 
           <canvas id="board" class="board" aria-label="Drawing board"></canvas>
 
@@ -46,7 +49,12 @@
           </div>
 
           <button id="start" type="button" hidden>Start game</button>
+          <button id="start" type="button" hidden>Start game</button>
+          <button id="start" type="button" hidden>Start game</button>
+          <button id="start" type="button" hidden>Start game</button>
+          <button id="start" type="button" hidden>Start game</button>
           <p class="hint" id="start-hint" hidden></p>
+          <p class="hint" id="start-hint" hidden>
         </div>
 
         <div class="card">
@@ -70,7 +78,7 @@
         <h2>No server</h2>
         <p id="offline-detail"></p>
         <form id="server-form" autocomplete="off">
-          <label for="server-url">Game server address</label>
+          <label for="server-url">Game server location</label>
           <input id="server-url" type="url" placeholder="https://my-game.example.com" required />
           <button type="submit">Connect</button>
         </form>
@@ -78,10 +86,11 @@
     </main>
 
     <script src="config.js"></script>
+    <script src="config.js"></script>
     <script src="socket.io.min.js"></script>
     <script src="shared/events.js"></script>
     <script src="shared/draw.js"></script>
-    <script src="board.js"></script>
+    <script src="board"></script>
     <script src="main.js"></script>
   </body>
 </html>

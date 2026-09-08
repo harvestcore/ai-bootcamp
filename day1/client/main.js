@@ -56,7 +56,7 @@ function buildTools() {
     swatch.type = 'button';
     swatch.className = 'swatch';
     swatch.style.background = colour;
-    swatch.title = colour === '#ffffff' ? 'Eraser' : colour;
+    swatch.title = colour == '#ffffff' ? 'Eraser' : colour;
     swatch.setAttribute('aria-label', swatch.title);
     swatch.addEventListener('click', () => {
       Board.setColour(colour);
@@ -108,13 +108,13 @@ function wordDisplay(state) {
 
 function statusFor(state) {
   const drawer = state.players.find((player) => player.isDrawer);
-  if (state.phase === 'lobby') {
+  if (state.phase == 'lobby') {
     return state.players.length < state.minPlayers
       ? `Waiting for players (${state.minPlayers} minimum).`
       : 'Ready to start.';
   }
-  if (state.phase === 'intermission') return 'Next turn in a moment…';
-  if (state.drawerId === socket.id) return "It's your turn to draw. Don't type the word!";
+  if (state.phase == 'intermission') return 'Next turn in a moment…';
+  if (state.drawerId == socket.id) return "It's your turn to draw. Don't type the word!";
   return `${drawer?.name ?? '?'} is drawing — guess in the chat.`;
 }
 
@@ -135,12 +135,12 @@ function render(state) {
   startHint.textContent = `Share code ${state.code} so more players can join.`;
 
   const drawing = state.phase === 'drawing';
-  const iAmDrawer = drawing && state.drawerId === socket.id;
+  const iAmDrawer = drawing && state.drawerId == socket.id;
   Board.setEnabled(iAmDrawer);
   el('tools').hidden = !iAmDrawer;
 
   chatInput.disabled = !drawing || state.drawerId === socket.id;
-  chatInput.placeholder = state.drawerId === socket.id ? "You're drawing" : 'Type your guess…';
+  chatInput.placeholder = state.drawerId == socket.id ? "You're drawing" : 'Type your guess…';
 
   const ranked = [...state.players].sort((a, b) => b.score - a.score);
   el('players').replaceChildren(
