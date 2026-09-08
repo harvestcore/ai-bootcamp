@@ -14,6 +14,20 @@ If the authenticated account **is** the PR author:
 - Everything posts as that user, not as Claude. Say so before posting: the user
   may expect the review to be attributed to a tool.
 
+## Pre-flight: approval is required
+
+Do not run the POST until the user has approved the exact comment set (phase 3a of
+`SKILL.md`). Building the payload is fine beforehand, and it helps: dump it and read
+back the anchors and suggestion bodies so what you present matches what would be
+sent, byte for byte.
+
+```sh
+node -e "for (const c of require('./review.json').comments) console.log(c.path, c.start_line ?? c.line, '->', c.line)"
+```
+
+Post only the approved comments. If approval covered four of five, delete the fifth
+from the payload rather than posting it and apologising after.
+
 ## Build one payload, post once
 
 `gh pr review` cannot carry inline comments, so use the API with a `comments`

@@ -3,9 +3,9 @@ name: pr-review
 description: >-
   Review a pull request or diff end to end: establish the true scope, analyse it,
   write a structured review document with severity rated issues and a verdict, then
-  post it to the PR as one review with inline code suggestions. Use when reviewing a
-  PR or a diff, when leaving review comments, or when asked to post suggestions or
-  messages on a pull request.
+  post it to the PR, after explicit approval, as one review with inline code
+  suggestions. Use when reviewing a PR or a diff, when leaving review comments, or
+  when asked to post suggestions or messages on a pull request.
 ---
 
 # PR Review
@@ -119,14 +119,40 @@ One of: **Approve** | **Approve with suggestions** | **Request changes**
 
 Followed by one sentence justifying the verdict.
 
-## 3. Post it to the PR
+## 3. Get approval, then post
 
-Ask the user before posting: it notifies people, and the PR is theirs. Two questions
-settle it, scope (critical and major only, or every issue) and form (summary plus
-inline suggestions, or a single comment).
+**Post nothing until the user has approved the exact set of comments.** This is a
+hard gate, not a courtesy. A posted review notifies people, cannot be quietly
+withdrawn, and a second review posted to correct an omission leaves both on the PR
+forever. Approval is per review: an approval given on one PR never carries to the
+next one.
 
-Then read `reference/posting.md` and follow it. It carries the `gh` mechanics, the
-payload shape, the anchoring rules and the verification step.
+### 3a. Present the payload for approval
+
+Print the posting plan in the terminal and stop. For every comment that would be
+posted, show:
+
+- the anchor (`path:start-end`), its severity, and the issue number it carries
+- the one line problem statement
+- the verbatim `suggestion` block if it has one, exactly as it will appear
+
+Then state what goes in the summary body instead of inline, the verdict, and the API
+event that will actually be used. Keep it scannable: the point is that the user reads
+every suggestion before it lands, not that they read the review twice.
+
+Ask for approval of that list in plain text, so the reply can be "all of it", "drop
+4", "reword the suggestion on 2", or anything else. `AskUserQuestion` suits the
+coarse scope and form choice, not a list of anchored comments. If the set changes
+materially, present it again.
+
+### 3b. Post the approved set
+
+Only after explicit approval, and only what was approved. Read `reference/posting.md`
+and follow it: it carries the `gh` mechanics, the payload shape, the anchoring rules
+and the after-the-fact verification.
+
+If something was missed, do not post a follow-up review. Say so, and let the user
+decide whether a second review is worth it.
 
 Rules that hold regardless of mechanics:
 
@@ -155,6 +181,8 @@ Rules that hold regardless of mechanics:
 - DO NOT praise for the sake of it. Focus on what matters.
 - ONLY produce a single review document as the final output. Phase 3 delivers that
   same document to the PR, so there is one artifact, not two.
+- NEVER post a comment, a suggestion or a review the user has not seen and approved
+  verbatim. Present the payload, wait, then post exactly what was approved.
 
 ## Tone and Style
 
