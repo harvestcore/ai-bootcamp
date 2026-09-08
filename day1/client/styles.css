@@ -194,6 +194,18 @@ input + .hint {
   transition: width 200ms linear;
 }
 
+.timer-seconds {
+  margin: 0.4rem 0 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.timer-seconds.urgent {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 #players li {
   display: flex;
   justify-content: space-between;

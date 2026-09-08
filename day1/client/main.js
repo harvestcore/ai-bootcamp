@@ -162,8 +162,18 @@ function render(state) {
 function tick() {
   if (!lastState) return;
   msLeft = Math.max(0, msLeft - 200);
-  const fraction = lastState.phase === 'drawing' ? msLeft / turnMs : 0;
+  const drawing = lastState.phase === 'drawing';
+  const fraction = drawing ? msLeft / turnMs : 0;
   el('timer-bar').style.width = `${Math.round(fraction * 100)}%`;
+
+  // The same countdown as the bar, spelled out: the bar alone makes it hard to
+  // tell ten seconds left from twenty.
+  const seconds = el('timer-seconds');
+  seconds.hidden = !drawing;
+  if (!drawing) return;
+  const left = Math.ceil(msLeft / 1000);
+  seconds.textContent = `${left}s left`;
+  seconds.classList.toggle('urgent', left <= 10);
 }
 setInterval(tick, 200);
 
