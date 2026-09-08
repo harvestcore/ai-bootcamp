@@ -18,6 +18,8 @@ const MIN_PLAYERS = 2;
 const MAX_POINTS_PER_GUESS = 100;
 const MIN_POINTS_PER_GUESS = 10;
 const POINTS_PER_PLAYER_GUESSED = 25;
+/** Edit distance at or under which a guess counts as a near miss. */
+const CLOSE_ENOUGH = 1;
 
 /** @type {{ getPlayers: (code: string) => Array<{id: string, name: string}>, onState: (code: string) => void, onChat: (code: string, message: object) => void, sendWord: (playerId: string, word: string|null) => void }} */
 let deps = null;
@@ -37,6 +39,29 @@ function normalizeGuess(text) {
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Levenshtein distance between two strings, used to spot a near miss.
+ * Small inputs (a word and a guess), so the plain grid is fine.
+ */
+function editDistance(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const grid = Array.from({ length: rows }, () => new Array(cols).fill(0));
+  for (let j = 0; j < cols; j += 1) grid[0][j] = j;
+
+  for (let i = 1; i < rows; i += 1) {
+    for (let j = 1; j < cols; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      grid[i][j] = Math.min(
+        grid[i - 1][j] + 1,
+        grid[i][j - 1] + 1,
+        grid[i - 1][j - 1] + cost,
+      );
+    }
+  }
+  return grid[rows - 1][cols - 1];
 }
 
 function pickWord(used) {
@@ -198,7 +223,13 @@ function handleGuess(code, playerId, text) {
   if (playerId === game.drawerId) return { kind: 'blocked', reason: "You're drawing — you can't chat." };
   if (game.guessed.has(playerId)) return { kind: 'chat' };
 
-  if (normalizeGuess(text) !== normalizeGuess(game.word)) return { kind: 'chat' };
+  const guess = normalizeGuess(text);
+  const target = normalizeGuess(game.word);
+  if (guess !== target) {
+    // One typo away is worth saying out loud; anything further is just chat.
+    if (editDistance(guess, target) <= CLOSE_ENOUGH) return { kind: 'close' };
+    return { kind: 'chat' };
+  }
 
   game.guessed.add(playerId);
   addScore(game, playerId, scoreFor(game));
