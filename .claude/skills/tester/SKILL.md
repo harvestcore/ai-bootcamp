@@ -5,8 +5,10 @@ description: >
     testing — acting as an expert QA engineer. Detects the project's existing test stack and
     conventions, systematically covers every real gap so regressions get caught, fills real assertions
     with no placeholders, refuses to write tests that add no value, and always asks the human when
-    anything is unclear. Use when asked to add tests, write tests for a change, improve coverage, or
-    check whether tests are missing.
+    anything is unclear. Draws on the sibling `enumerate-behaviours`, `cover-the-gaps`,
+    `regression-fixture`, and `kill-flakes` skills for the sub-problems each of them does best, and
+    cross-checks its own output against them before reporting. Use when asked to add tests, write tests
+    for a change, improve coverage, or check whether tests are missing.
 ---
 
 # Tester
@@ -23,6 +25,41 @@ duplicated.
 
 Adapt to whatever project you're invoked in. Never assume a language, framework, or test runner up
 front — detect them from the repo itself.
+
+## Working with the other QA skills
+
+Four sibling skills each own one sub-problem better than a single pass through this workflow would:
+`enumerate-behaviours`, `cover-the-gaps`, `regression-fixture`, and `kill-flakes`. Use them as
+collaborators, not as boxes to check — invoke them at the points below, read what they return with the
+same scrutiny you'd apply to your own analysis, and feed anything they surface back into your gap list
+or test file before moving on. None of them replace your own judgment: an entry a sibling skill marks
+`(assumed)` or "uncertain" is still your job to resolve, per "When in doubt" below, not something to pass
+through untouched.
+
+- **`enumerate-behaviours`** — invoke it in step 4 to build the gap list for a target that has little or
+  no existing test coverage to cross-check against (a new function/module, or a change large enough that
+  hand-enumerating risks missing cases). It writes no tests, only the list; you still own turning that
+  list into the gap list step 4 requires.
+- **`cover-the-gaps`** — invoke it in step 3–4 instead of manually skimming and cross-referencing when
+  the target already has a non-trivial existing suite (this is exactly its job: behaviours the current
+  tests don't actually pin down, not just lines they don't hit). Invoke it **again in step 11**, this
+  time against the test file you just finished writing, as an independent second pass before you present
+  anything — it doesn't know what you were trying to cover, so anything it still flags is real signal.
+  Fold real findings back into another round of steps 7–8 rather than reporting with a known gap left in.
+- **`regression-fixture`** — when the change under test is a bug fix rather than new/changed behaviour
+  (check for this explicitly in step 1: a linked issue, a commit/PR described as a fix, a diff that
+  narrowly corrects one condition), delegate that specific test to it instead of hand-writing an ad hoc
+  regression test. It verifies the test actually fails on the pre-fix code, which is a stronger guarantee
+  than eyeballing an assertion — fold its output into your test file, matching this project's naming and
+  marker conventions, without weakening what it asserts.
+- **`kill-flakes`** — when step 9's validation run turns up a failure that looks flaky rather than caused
+  by your change, invoke it against the affected test file instead of guessing at a fix or just
+  re-running until green. Report what it diagnoses (fixed, or honestly quarantined) in your own step 11
+  report rather than silently absorbing the outcome.
+
+For a small, self-contained change (a single function, a handful of straightforward branches), it's fine
+to do steps 3–4 yourself using the categories below without invoking a sibling skill — reserve the extra
+pass for anything substantial enough to actually benefit from it.
 
 ## Non-negotiables
 
@@ -157,6 +194,9 @@ getting it "wrong" only affects cosmetics, it isn't.
 - Read the changed/target production files completely — for anything non-trivial, use the **Explore
   subagent** rather than chaining manual reads, focused on: function signatures, branches, error paths,
   and side effects (network, filesystem, DB, timers, external services).
+- Check whether this change is a **bug fix** rather than new/changed behaviour — a linked issue, a
+  commit/PR described as a fix, or a diff that narrowly corrects one condition. If so, note it now: step
+  8 will hand that specific case to `regression-fixture` instead of writing it by hand.
 
 ### 2. Detect the existing test stack
 
@@ -177,10 +217,18 @@ Skim the current test suite (or at least the parts adjacent to the change) speci
 what's already covered. This is what prevents duplicate/noise tests later — you can't tell a test is
 redundant if you never looked at what already exists.
 
+If the target already has a non-trivial suite, this is the point to invoke **`cover-the-gaps`** instead
+of skimming by hand — it does exactly this comparison (real behaviours vs. what's actually asserted, not
+just which tests exist) and its gap list feeds directly into step 4.
+
 ### 4. Find every gap, systematically
 
 Don't rely on skimming for "the obvious edge cases." Go through the changed/target code path by path
-and enumerate, explicitly:
+and enumerate, explicitly — or, for a target substantial enough to warrant it, invoke
+**`enumerate-behaviours`** (no existing coverage to compare against) or use the **`cover-the-gaps`**
+output from step 3 (existing coverage found) instead of building this list by hand. Either way, treat
+what comes back as a draft: verify it against the categories below and against reachability yourself
+before treating anything as settled — an imported list doesn't skip the "When in doubt" rules.
 
 - Every conditional branch (`if`/`else`, `switch`/`match`, ternaries, short-circuiting) — both sides of
   each.
@@ -251,13 +299,21 @@ Work through the gap list from step 4 one item at a time and produce one focused
 what "cover every gap" and "never write noise" both cash out to in practice: complete coverage of real
 gaps, with no padding, no duplication, and nothing tested twice under different names.
 
+If step 1 flagged this change as a bug fix, hand that specific gap to **`regression-fixture`** rather
+than writing it yourself — it verifies the test actually fails against the pre-fix code, a stronger
+guarantee than a hand-written assertion gets you. Fold its output into your test file, adjusting naming
+and marker placement to match this file's conventions if needed, without weakening what it asserts.
+
 ### 9. Validate
 
 Run the project's actual test command (from its docs, `package.json`/`Makefile`/CI config) and read the
 **full** output, not just the first screen. All tests must be green before you present anything. Fix
 failures by fixing the test (or flag a real production bug per the "no production code changes" rule
 above) — don't delete or weaken an assertion to make it pass. If failures look flaky rather than caused
-by your change, say so and ask rather than silently retrying until green.
+by your change, invoke **`kill-flakes`** on the affected file instead of guessing at a fix yourself or
+silently retrying until green; carry its outcome (fixed, or honestly quarantined) into step 11 rather
+than absorbing it silently. Only escalate straight to the human if the flakiness looks like it could be
+caused by your own change rather than a pre-existing test problem.
 
 ### 10. Measure coverage
 
@@ -284,14 +340,24 @@ Coverage here is a **diagnostic against step 4's gap list, not a target to chase
 
 ### 11. Report and iterate
 
+Before writing the summary, run an independent second pass over the test file(s) you just wrote by
+invoking **`cover-the-gaps`** against them. It has no memory of what you were trying to cover, so
+anything it still flags is real signal, not something already ruled out. Fold any genuine finding back
+into another round of steps 7–8 before you present anything; note in the summary below that this check
+ran and what, if anything, it caught that step 4 had missed.
+
 Summarize:
 
 - Every test file added/modified, and the test cases in each (name + one line on what it proves —
   i.e. the regression it catches).
 - Which test type(s) were used and why, for anything non-obvious.
 - Coverage achieved on the touched files from step 10 (line/branch %, or the tool's equivalent), and
-  anything it revealed that step 4's manual gap analysis had missed — or that no coverage tool was
+  anything it revealed that step 4's gap analysis had missed — or that no coverage tool was
   available/agreed and why that's fine for this change.
+- The outcome of the independent `cover-the-gaps` pass above.
+- Which sibling skills were invoked (`enumerate-behaviours`, `cover-the-gaps`, `regression-fixture`,
+  `kill-flakes`) and what each contributed — including any test quarantined by `kill-flakes` rather than
+  fixed, so that isn't buried.
 - Any non-blocking assumptions made, and any blocking questions you already asked and how they were
   resolved.
 - Anything you deliberately did **not** test and why (already covered elsewhere, unreachable, or would
