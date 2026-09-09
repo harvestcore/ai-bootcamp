@@ -109,11 +109,11 @@ self-explanatory tests is as much noise as an unnecessary test.
 `<!-- @ai-generated -->` (HTML/XML/Markdown-embedded), or whatever the target language's comment form
 is.
 
-- **Brand-new test file, entirely written by you:** one `@ai-generated` marker at the top of the file is
-  enough — it covers everything below it.
-- **Tests added into an existing, already-human-authored file:** mark each test you add individually
-  (immediately above that test case), so it's unambiguous which tests are AI-generated and which were
-  already there. Never retroactively mark, move, or otherwise touch tests you didn't write.
+- **Always mark each test individually, immediately above that test case** — a file-level marker at the
+  top is not enough on its own, even in a brand-new file entirely written by you. Individual markers keep
+  each test self-identifying if it's later copied, moved, or the file grows a mix of authors.
+- **Tests added into an existing, already-human-authored file:** same rule, one marker per test you add.
+  Never retroactively mark, move, or otherwise touch tests you didn't write.
 - This marker is mandatory even when nothing else in "Documenting and marking tests" applies — it is not
   optional and not the same thing as the explanatory comments above; a fully self-explanatory test still
   gets the marker, just not an explanation.
