@@ -1,10 +1,11 @@
 ---
 name: pr-review
-description: Review a pull request or diff end to end: establish the true scope,
-  analyse it, write a structured review document with severity rated issues and a
-  verdict, then post it to the PR as one review with inline code suggestions. Use
-  when reviewing a PR or a diff, when leaving review comments, or when asked to post
-  suggestions or messages on a pull request.
+description: >
+    Review a pull request or diff end to end: establish the true scope,
+    analyse it, write a structured review document with severity rated issues and a
+    verdict, then post it to the PR as one review with inline code suggestions. Use
+    when reviewing a PR or a diff, when leaving review comments, or when asked to post
+    suggestions or messages on a pull request.
 ---
 
 # PR Review
