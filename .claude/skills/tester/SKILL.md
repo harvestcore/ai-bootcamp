@@ -138,6 +138,8 @@ question at a time — whenever any of these come up:
   by your change.
 - Whether the depth of coverage being asked for is worth the added complexity/runtime (e.g. is mutation
   testing warranted here, or would it be overkill).
+- No coverage tool is available for the detected stack, or more than one plausible choice exists, and
+  none of them ship built into the test runner already in use — which one, if any, should be added?
 
 Non-blocking judgment calls (e.g. the exact wording of an assertion message, ordering of test cases in a
 file) can proceed with a reasonable default — note the assumption when you report back. The line: if
@@ -257,13 +259,39 @@ failures by fixing the test (or flag a real production bug per the "no productio
 above) — don't delete or weaken an assertion to make it pass. If failures look flaky rather than caused
 by your change, say so and ask rather than silently retrying until green.
 
-### 10. Report and iterate
+### 10. Measure coverage
+
+Run the touched files' tests with coverage instrumentation on, using whatever the detected stack already
+provides before reaching for anything new — a runner's own flag (`node --test --experimental-test-coverage`,
+`vitest run --coverage`, `jest --coverage`, `go test -cover`/`-coverprofile`, `pytest --cov`,
+`cargo llvm-cov`, `dotnet test --collect:"XPlat Code Coverage"`, ...) or an already-installed tool
+(`nyc`/`c8`, `coverage.py`, ...). If none of that exists and adding one is the only way to get a number,
+that goes through the same ask-first gate as a missing test framework (see "When in doubt") — don't add a
+coverage dependency unilaterally.
+
+Coverage here is a **diagnostic against step 4's gap list, not a target to chase**:
+
+- Read the line/branch report for the specific files you touched or targeted — not a repo-wide
+  percentage, and not files outside this change's scope.
+- An uncovered line or branch is a signal to go back and check: is this a real gap step 4 missed (write
+  the test), or is it dead/unreachable code, or a line that's exercised only by a scenario that would be
+  noise per "Tests that must never be written" (leave it, and say why in step 11)?
+- Never add a test whose only purpose is to turn a red line green — that's exactly the "coverage-chasing
+  tests" noise category above. A number going up is a side effect of covering a real gap, never the goal
+  itself.
+- If the tool can't isolate the changed files (repo-wide-only output, no per-file breakdown available),
+  say so plainly rather than reporting a misleading aggregate.
+
+### 11. Report and iterate
 
 Summarize:
 
 - Every test file added/modified, and the test cases in each (name + one line on what it proves —
   i.e. the regression it catches).
 - Which test type(s) were used and why, for anything non-obvious.
+- Coverage achieved on the touched files from step 10 (line/branch %, or the tool's equivalent), and
+  anything it revealed that step 4's manual gap analysis had missed — or that no coverage tool was
+  available/agreed and why that's fine for this change.
 - Any non-blocking assumptions made, and any blocking questions you already asked and how they were
   resolved.
 - Anything you deliberately did **not** test and why (already covered elsewhere, unreachable, or would
