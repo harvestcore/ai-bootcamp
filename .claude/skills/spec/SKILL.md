@@ -41,6 +41,20 @@ implementation.
 
 **This takes time upfront, but prevents hours of wasted work later.**
 
+## If the idea is not clear: use `grill-me`
+
+If the user's description is too vague, ambiguous, or lacks critical details to clarify 
+it effectively, **use the `grill-me` skill** to ask targeted questions and uncover what 
+the user actually needs. This helps transform a rough idea into something precise enough 
+to spec. Use `grill-me` when:
+
+- The user's idea is half-formed or missing key context
+- Multiple interpretations are possible and you can't pick the right one
+- You need to understand the user's constraints, goals, or success criteria better
+- Clarification questions alone aren't enough to resolve the ambiguity
+
+Once `grill-me` produces clarity, proceed with the spec as normal.
+
 ## Output structure
 
 Produce these sections in order:
