@@ -2,6 +2,14 @@
 
 **Related documents:** [`lego-inventory-ux-ui.md`](lego-inventory-ux-ui.md) (screens, states, navigation flows) · [`SESSION_LOG.md`](SESSION_LOG.md) (decision history)
 
+> **Amendment (post-implementation):** the user later overrode this spec's "description required, part
+> number optional" design. In the shipped app, **the LEGO part number is mandatory** and **there is no
+> free-text description field** — the piece's display name always comes from the bundled catalog
+> (official name for the part number, or `Part #<num>` when unrecognized); personal notes remain
+> optional. Every "description" reference below should be read as "the catalog-derived name." See
+> `day4/CLAUDE.md`'s "Deviations from the written spec" for the authoritative note — this file is left
+> otherwise unchanged as a record of the original design.
+
 ## Intent
 
 Enable a single collector to organize and quickly locate loose LEGO bricks from completed sets stored in workshop-style drawer organizers. When building a new creation, the system provides fast, visual lookup of which drawers contain needed pieces.

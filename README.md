@@ -8,6 +8,7 @@ scripts and documentation.
 
 ```
 day1/    Draw & Guess — multiplayer draw-and-guess game
+day4/    LEGO Brick Inventory — offline-first PWA for a workshop drawer inventory
 ```
 
 Every `dayN/` directory stands alone: it is installed and run on its own, and
@@ -39,6 +40,31 @@ npm start          # http://localhost:3000
 Architecture notes live in [day1/CLAUDE.md](day1/CLAUDE.md), and the deployment
 steps (client on GitHub Pages, server on any Node host) in
 [day1/DEPLOY.md](day1/DEPLOY.md).
+
+### Day 4 — LEGO Brick Inventory
+
+An offline-first PWA to track loose LEGO bricks from completed sets, stored across workshop drawer
+organizers: search by description or part number, see which drawer/compartment holds them, and get a
+suggested location (grouped by piece type, split into partitions for a second color) when adding new
+pieces.
+
+- **Build:** Vite + vanilla JS, no UI framework — the app needed a real build step (service worker,
+  IndexedDB, several screens) but not a framework on top of it.
+- **Data:** fully offline via IndexedDB; the LEGO parts/colors catalog is
+  [Rebrickable's free CSV download](https://rebrickable.com/downloads/), bundled locally and indexed
+  on first launch — no live API calls. No part images are bundled (Rebrickable doesn't include them
+  in the CSV export; real ones need a personal API key), so every piece shows a generic placeholder.
+- **Movement log:** every add/extract/move/edit/delete is recorded in one global, filterable audit
+  trail.
+
+```sh
+cd day4/lego-inventory-helper
+npm install
+npm run dev          # http://localhost:5173
+```
+
+Spec, UX/UI design, and decision history live in [day4/](day4/); implementation decisions and
+architecture in [day4/CLAUDE.md](day4/CLAUDE.md).
 
 ## How I work here
 
