@@ -189,6 +189,12 @@ export interface SearchFilters {
   unitId?: string
 }
 
+/**
+ * Free-text search over the piece name, its part number, its **color name** and
+ * its notes. Color is in there because "the red plates" is how people actually
+ * look for a piece; notes because that's where anything the catalog name
+ * doesn't capture ends up.
+ */
 export function searchPieces(
   snap: InventorySnapshot,
   query: string,
@@ -197,13 +203,32 @@ export function searchPieces(
   const q = query.trim().toLowerCase()
   return snap.pieces.filter((p) => {
     if (q) {
-      const matchesText =
-        p.description.toLowerCase().includes(q) || p.partNumber.toLowerCase().includes(q)
-      if (!matchesText) return false
+      const haystack = [p.description, p.partNumber, p.color.name, p.notes]
+      if (!haystack.some((value) => value.toLowerCase().includes(q))) return false
     }
     if (color && colorKey(p.color) !== color) return false
     if (unitId && p.unitId !== unitId) return false
     return true
+  })
+}
+
+export type PieceSort = 'name' | 'quantity' | 'location'
+
+/** Sorted copy of `pieces`. Location order follows the physical layout. */
+export function sortPieces(snap: InventorySnapshot, pieces: Piece[], sort: PieceSort): Piece[] {
+  const unitOrder = new Map(snap.units.map((unit, index) => [unit.id, index]))
+  const byName = (a: Piece, b: Piece) => a.description.localeCompare(b.description)
+
+  return [...pieces].sort((a, b) => {
+    if (sort === 'quantity') return b.quantity - a.quantity || byName(a, b)
+    if (sort === 'location') {
+      return (
+        (unitOrder.get(a.unitId) ?? 0) - (unitOrder.get(b.unitId) ?? 0) ||
+        a.compartmentIndex - b.compartmentIndex ||
+        a.partitionIndex - b.partitionIndex
+      )
+    }
+    return byName(a, b)
   })
 }
 

@@ -114,8 +114,13 @@ function Cell({
         partitionsFull={record.partitionsFull}
         occupants={occupants}
       />
-      {!compact && !occupied ? (
-        <span className="absolute bottom-0.5 right-1 text-[10px] text-ink-muted/60">{index + 1}</span>
+      {/* Always numbered, not just when empty: the movement log and the
+          suggestions talk about "Compartment 13", and counting cells by hand to
+          find it is exactly the job this app is supposed to do for you. */}
+      {!compact ? (
+        <span className="absolute right-1 bottom-0.5 text-[10px] leading-none text-ink-muted/60">
+          {index + 1}
+        </span>
       ) : null}
     </button>
   )

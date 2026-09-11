@@ -30,6 +30,12 @@ here rather than silently rewriting `lego-inventory-spec.md`'s history:
   though `matching.ts` still implements it for completeness/defensiveness.
 - **The UI is a React single-page app, not the vanilla-JS one the first implementation used.** The
   behaviour didn't change; the implementation and the visual design did. See "Stack" below.
+- **Search matches more than the spec asks for, and there is an Import.** The spec's search covers
+  description and part number; `searchPieces` also matches the color name and the notes, because
+  "the red plates" is how people actually look for a piece. The spec also settled on manual export
+  only — there is now a matching **restore from an exported JSON** (Setup → Backups), plus a
+  download of the `.sqlite` file itself. Restoring replaces the whole inventory and is confirmed
+  first; an empty payload is refused.
 - **Storage is a SQLite file on disk, not browser storage.** The spec says "all data stored locally
   in browser (IndexedDB or localStorage)" and lists browser storage quotas as a constraint; the user
   asked instead for a real `.sqlite` file they own. It is still *local-only* — nothing leaves the
@@ -164,8 +170,10 @@ lego-inventory-helper/
     icons/                 generated placeholder icons (192/512/180)
   server/                  runs as TypeScript directly (no build step)
     index.ts               production server: static dist/ + the API, prints the db path
-    api.ts                 the HTTP API: GET status/inventory/catalog*, POST actions/<name>
-    actions.ts             every write, one SQLite transaction each, + legacy-import normalizing
+    api.ts                 the HTTP API: GET status/inventory/catalog*/export/database,
+                           POST actions/<name>
+    actions.ts             every write, one SQLite transaction each; also the backup restore and
+                           the legacy import, both normalizing records they didn't create
     repository.ts          row <-> domain mapping, snapshot reads, the individual writes
     catalog.ts             streams the CSVs into the catalog_* tables once; catalog SQL queries
     db.ts                  the file location, the schema, transaction helper, meta table
@@ -194,16 +202,24 @@ lego-inventory-helper/
       ui.tsx                Button/Card/Field/TextInput/TextArea/Chip/EmptyState/Callout/SectionTitle
       CompartmentGrid.tsx   one unit's grid; same component for the Home preview, the unit view
                             and the location/move pickers
-      CompartmentPanel.tsx  what's inside one compartment (extract, mark full, edit, delete)
+      CompartmentPanel.tsx  what's inside one compartment (extract, mark full, edit, delete);
+                            scrolls itself into view on phones, where it renders below the grid
+      PieceRow.tsx          one piece as a row, shared by the home search and the All pieces list
       ColorPicker.tsx, ColorSwatch.tsx, PartSearch.tsx, PieceImage.tsx, ActionTag.tsx
       PieceIdentityFields.tsx   the part-number + catalog-name + color block shared by Add and Edit
       ConfirmDialog.tsx     modal confirmation for destructive actions
     pages/
       HomePage.tsx          search + stats + unit cards
-      DrawerUnitPage.tsx    one unit's grid with the compartment panel beside/below it
-      AddPiecePage.tsx      the add wizard (details → duplicate? → location → partition split?)
+      PiecesPage.tsx        the whole inventory as one list: sort by name/quantity/location,
+                            filter by color and unit — what the drawer grids can't answer
+      DrawerUnitPage.tsx    one unit's grid with the compartment panel beside/below it; the title
+                            is click-to-rename
+      AddPiecePage.tsx      the add wizard (details → duplicate? → location → partition split? →
+                            confirmation). The confirmation step keeps you in the flow ("add
+                            another", "same part, another color") because salvaging a set means
+                            entering pieces one after another
       EditPiecePage.tsx     edit identity/notes, move, delete
-      DrawerSetupPage.tsx   first-run setup, rename/resize/delete units
+      DrawerSetupPage.tsx   first-run setup, rename/resize/delete units, and the Backups section
       MovementLogPage.tsx   history with unit/compartment filters in the URL
 ```
 

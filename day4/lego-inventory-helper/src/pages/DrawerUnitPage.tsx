@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CompartmentGrid } from '../components/CompartmentGrid'
 import { CompartmentPanel } from '../components/CompartmentPanel'
-import { Button, Card, EmptyState } from '../components/ui'
+import { Button, Card, EmptyState, TextInput } from '../components/ui'
 import { useInventory } from '../hooks/useInventory'
 import { compartmentCount, getUnit } from '../lib/inventory'
 import { plural } from '../lib/format'
+import { renameUnit } from '../lib/store'
+import type { DrawerUnit } from '../types'
 
 /**
  * A whole drawer unit, with the detail of one compartment beside it (on wide
@@ -37,7 +40,7 @@ export function DrawerUnitPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-ink">{unit.name}</h1>
+          <UnitName unit={unit} />
           <p className="text-sm text-ink-muted">
             {unit.rows}×{unit.cols} · {plural(compartmentCount(unit), 'compartment')}
           </p>
@@ -75,6 +78,63 @@ export function DrawerUnitPage() {
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * Click the title to rename the unit. "Unit 1…4" tells you nothing when you're
+ * standing in front of two cabinets and a shelf; renaming was previously buried
+ * in the setup screen, which is not where you are when you notice.
+ */
+function UnitName({ unit }: { unit: DrawerUnit }) {
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(unit.name)
+
+  async function commit() {
+    setEditing(false)
+    const trimmed = name.trim()
+    if (!trimmed || trimmed === unit.name) {
+      setName(unit.name)
+      return
+    }
+    await renameUnit(unit.id, trimmed)
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setName(unit.name)
+          setEditing(true)
+        }}
+        title="Click to rename"
+        className="group flex items-center gap-2 text-xl font-semibold text-ink"
+      >
+        {unit.name}
+        <span className="text-sm text-ink-muted opacity-0 transition-opacity group-hover:opacity-100">
+          ✎
+        </span>
+      </button>
+    )
+  }
+
+  return (
+    <TextInput
+      value={name}
+      autoFocus
+      aria-label="Unit name"
+      className="h-9 w-56 text-lg font-semibold"
+      onChange={(e) => setName(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit()
+        if (e.key === 'Escape') {
+          setName(unit.name)
+          setEditing(false)
+        }
+      }}
+    />
   )
 }
 

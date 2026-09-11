@@ -1,10 +1,18 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CompartmentGrid } from '../components/CompartmentGrid'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Button, Callout, Card, Field, SectionTitle, TextInput } from '../components/ui'
 import { useInventory } from '../hooks/useInventory'
-import { createUnit, deleteUnit, renameUnit, updateUnitDimensions } from '../lib/store'
+import {
+  createUnit,
+  DATABASE_DOWNLOAD_URL,
+  deleteUnit,
+  exportInventory,
+  renameUnit,
+  restoreFromBackup,
+  updateUnitDimensions,
+} from '../lib/store'
 import { compartmentCount, countPiecesInUnit } from '../lib/inventory'
 import { plural } from '../lib/format'
 import type { DrawerUnit } from '../types'
@@ -40,7 +48,102 @@ export function DrawerSetupPage() {
           <AddUnitForm />
         </>
       ) : null}
+
+      <DataSection />
     </div>
+  )
+}
+
+/**
+ * Backups. The database file is the real one — this is where you get a copy of
+ * it, or of the human-readable JSON, and where you put one back.
+ */
+function DataSection() {
+  const snapshot = useInventory()
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [pending, setPending] = useState<{ name: string; payload: unknown } | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  function downloadJson() {
+    const blob = new Blob([JSON.stringify(exportInventory(), null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `lego-inventory-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function pickFile(file: File) {
+    setError(null)
+    setMessage(null)
+    try {
+      const payload: unknown = JSON.parse(await file.text())
+      setPending({ name: file.name, payload })
+    } catch {
+      setError(`${file.name} isn't a valid JSON export.`)
+    }
+  }
+
+  return (
+    <Card className="space-y-4 p-4">
+      <SectionTitle hint={plural(snapshot.pieces.length, 'entry', 'entries')}>
+        Backups
+      </SectionTitle>
+
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={downloadJson}>⬇ Export as JSON</Button>
+        <a
+          href={DATABASE_DOWNLOAD_URL}
+          className="inline-flex h-10 items-center justify-center rounded-xl border border-line bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-sunken"
+        >
+          ⬇ Download the database file
+        </a>
+        <Button onClick={() => fileInput.current?.click()}>⬆ Restore from JSON…</Button>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            // Reset, so picking the same file twice still fires a change event.
+            e.target.value = ''
+            if (file) void pickFile(file)
+          }}
+        />
+      </div>
+
+      {message ? <Callout>{message}</Callout> : null}
+      {error ? <Callout tone="danger">{error}</Callout> : null}
+
+      <ConfirmDialog
+        open={pending !== null}
+        title="Replace everything with this backup?"
+        confirmLabel="Restore"
+        onCancel={() => setPending(null)}
+        onConfirm={async () => {
+          const backup = pending
+          setPending(null)
+          if (!backup) return
+          try {
+            const outcome = await restoreFromBackup(backup.payload)
+            setMessage(
+              `Restored ${plural(outcome.units, 'unit')} and ${plural(outcome.pieces, 'piece entry', 'piece entries')} from ${backup.name}.`,
+            )
+          } catch (restoreError) {
+            setError(restoreError instanceof Error ? restoreError.message : String(restoreError))
+          }
+        }}
+      >
+        Your current drawers, pieces and history ({plural(snapshot.pieces.length, 'entry', 'entries')})
+        are deleted and replaced with the contents of <strong>{pending?.name}</strong>. Export first
+        if you're not sure.
+      </ConfirmDialog>
+    </Card>
   )
 }
 

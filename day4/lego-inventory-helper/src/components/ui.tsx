@@ -1,5 +1,11 @@
 import { cn } from '../lib/cn'
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  Ref,
+  TextareaHTMLAttributes,
+} from 'react'
 
 // Small, shared building blocks. Every screen composes these instead of
 // repeating long Tailwind class lists, so the look stays consistent in one place.
@@ -38,9 +44,17 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
   )
 }
 
-export function Card({ className, children }: { className?: string; children: ReactNode }) {
+export function Card({
+  className,
+  children,
+  ref,
+}: {
+  className?: string
+  children: ReactNode
+  ref?: Ref<HTMLDivElement>
+}) {
   return (
-    <div className={cn('rounded-card border border-line bg-surface shadow-sm', className)}>
+    <div ref={ref} className={cn('rounded-card border border-line bg-surface shadow-sm', className)}>
       {children}
     </div>
   )

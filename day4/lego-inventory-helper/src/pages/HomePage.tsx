@@ -2,19 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CompartmentGrid } from '../components/CompartmentGrid'
 import { ColorSwatch } from '../components/ColorSwatch'
-import { PieceImage } from '../components/PieceImage'
+import { PieceRow } from '../components/PieceRow'
 import { Button, Card, Chip, EmptyState, SectionTitle, TextInput } from '../components/ui'
 import { useInventory } from '../hooks/useInventory'
 import { colorKey } from '../lib/matching'
-import {
-  compartmentCount,
-  distinctColors,
-  getStats,
-  getUnit,
-  searchPieces,
-} from '../lib/inventory'
+import { compartmentCount, distinctColors, getStats, searchPieces } from '../lib/inventory'
 import { plural } from '../lib/format'
-import type { Piece } from '../types'
 
 export function HomePage() {
   const snapshot = useInventory()
@@ -38,7 +31,7 @@ export function HomePage() {
             setColorFilter('')
             setUnitFilter('')
           }}
-          placeholder="Search your pieces by name or part number…"
+          placeholder="Search your pieces by name, number or color…"
           className="h-12 rounded-2xl pl-10 text-base shadow-sm"
           autoComplete="off"
         />
@@ -191,47 +184,16 @@ function SearchResults({
       {matches.length === 0 ? (
         <EmptyState icon="🔍" title="Nothing matches that search">
           <p className="text-sm text-ink-muted">
-            Try a part number, or a word from the piece name like “plate” or “slope”.
+            Try a part number, a color like “red”, or a word from the piece name like “plate”.
           </p>
         </EmptyState>
       ) : (
         <Card className="divide-y divide-line overflow-hidden">
           {matches.map((piece) => (
-            <ResultRow key={piece.id} piece={piece} snapshot={snapshot} />
+            <PieceRow key={piece.id} piece={piece} snapshot={snapshot} />
           ))}
         </Card>
       )}
     </section>
-  )
-}
-
-function ResultRow({ piece, snapshot }: { piece: Piece; snapshot: ReturnType<typeof useInventory> }) {
-  const unit = getUnit(snapshot, piece.unitId)
-
-  return (
-    <Link
-      to={`/unit/${piece.unitId}/compartment/${piece.compartmentIndex}`}
-      className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-sunken"
-    >
-      <PieceImage imageUrl={piece.imageUrl} size={40} />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-ink">{piece.description}</div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-muted">
-          <ColorSwatch color={piece.color} size={11} />
-          <span className="truncate">{piece.color.name}</span>
-          <span aria-hidden="true">·</span>
-          <span className="font-mono">#{piece.partNumber}</span>
-        </div>
-      </div>
-      <div className="text-right">
-        <div className="text-sm font-semibold text-ink">{piece.quantity}</div>
-        <div className="text-xs text-ink-muted">
-          {unit?.name}, C{piece.compartmentIndex + 1}
-        </div>
-      </div>
-      <span className="text-ink-muted" aria-hidden="true">
-        ›
-      </span>
-    </Link>
   )
 }

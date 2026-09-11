@@ -5,7 +5,8 @@ import { exportInventory } from '../lib/store'
 
 const NAV = [
   { to: '/', label: 'Drawers', icon: '🗄️', end: true },
-  { to: '/add', label: 'Add piece', icon: '➕', end: false },
+  { to: '/pieces', label: 'Pieces', icon: '🧱', end: false },
+  { to: '/add', label: 'Add piece', short: 'Add', icon: '➕', end: false },
   { to: '/log', label: 'History', icon: '🕘', end: false },
   { to: '/setup', label: 'Setup', icon: '⚙️', end: false },
 ]
@@ -56,7 +57,7 @@ export function AppShell() {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -72,7 +73,8 @@ export function AppShell() {
               <span className="text-lg leading-none" aria-hidden="true">
                 {item.icon}
               </span>
-              {item.label}
+              {/* The tab bar has five slots on a phone: some labels need a shorter form. */}
+              {'short' in item ? item.short : item.label}
             </NavLink>
           ))}
         </div>

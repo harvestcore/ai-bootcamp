@@ -154,6 +154,17 @@ export interface InventoryExport {
   movementLog: MovementEntry[]
 }
 
+/** Where the browser can fetch a consistent copy of the SQLite file itself. */
+export const DATABASE_DOWNLOAD_URL = '/api/export/database'
+
+/**
+ * Replaces the entire inventory with the contents of an exported JSON file.
+ * Destructive: the caller must have confirmed with the user first.
+ */
+export function restoreFromBackup(payload: unknown): Promise<{ units: number; pieces: number }> {
+  return run<{ units: number; pieces: number }>('restoreBackup', payload)
+}
+
 /**
  * A portable JSON copy of the inventory. (The database file itself is the real
  * backup — this is the human-readable one the spec asks for.)

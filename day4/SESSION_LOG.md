@@ -412,3 +412,26 @@ require touching the logic.
   missing fields added later (piece photos, notes), so the import normalizes every record — the
   first attempt failed on exactly that (`Provided value cannot be bound to SQLite parameter 15`),
   and a failed import now leaves the app usable with a visible warning instead of refusing to start.
+
+## Round 8: UI improvements (09/11)
+
+Asked what was worth improving in the UI; picked the whole shortlist. Implemented:
+
+1. **Entering pieces one after another.** Saving no longer throws you out of the flow: a
+   confirmation step says what was added and offers "add another piece" (empty form) or "same part,
+   another color" (keeps the part number), with a running count. Salvaging a set is dozens of
+   pieces in a row and that was the most tedious part of the app.
+2. **An "All pieces" screen.** The list of what you own existed only as search results, so with an
+   empty search there was no way to see everything. New page: sort by name / quantity / location,
+   filter by color and unit, plus a text filter.
+3. **Search matches colors** (and notes), not just name and part number.
+4. Compartment numbers are drawn on **every** cell, not only empty ones — the log says
+   "Compartment 13" and counting cells by hand defeats the point.
+5. Long catalog names **wrap** in the compartment panel instead of truncating everywhere (a printed
+   minifig head name is 90 characters), with the full name on hover in lists.
+6. On phones, tapping a compartment **scrolls its panel into view**; it renders below the grid, so
+   it previously looked like nothing had happened.
+7. Drawer units are **renamed by clicking the title** on the unit screen, not only from Setup.
+8. A **Backups** section in Setup: export JSON, download the `.sqlite` file (a consistent copy via
+   `VACUUM INTO`, not a file copy behind the WAL's back), and restore from an exported JSON —
+   destructive, so it confirms first and refuses an empty file.

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ColorSwatch } from './ColorSwatch'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -22,11 +22,20 @@ export function CompartmentPanel({
   onClose: () => void
 }) {
   const navigate = useNavigate()
+  const panel = useRef<HTMLDivElement>(null)
   const { occupants, record } = getCompartmentInfo(snapshot, unit.id, index)
   const partitions = Array.from({ length: record.partitionCount }, (_, i) => i)
 
+  // On a phone this panel renders *below* the grid, so tapping a compartment
+  // would otherwise look like nothing happened. On wide screens it sits beside
+  // the grid and is already visible, so leave the scroll position alone.
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 1024px)').matches) return
+    panel.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [unit.id, index])
+
   return (
-    <Card className="overflow-hidden lg:sticky lg:top-20">
+    <Card ref={panel} className="overflow-hidden lg:sticky lg:top-20">
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-semibold text-ink">Compartment {index + 1}</h2>
@@ -170,7 +179,9 @@ function OccupantRow({
         <PieceImage imageUrl={piece.imageUrl} size={48} />
         <div className="min-w-0 flex-1">
           <PartitionLabel partitionIndex={partitionIndex} partitionCount={partitionCount} />
-          <div className="truncate font-medium text-ink">{piece.description}</div>
+          {/* Not truncated: catalog names run long, and this panel is the one
+              place the whole name has to be readable. */}
+          <div className="font-medium break-words text-ink">{piece.description}</div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
             <span className="flex items-center gap-1">
               <ColorSwatch color={piece.color} size={11} />

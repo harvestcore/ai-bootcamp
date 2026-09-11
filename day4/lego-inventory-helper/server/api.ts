@@ -1,4 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { createReadStream } from 'node:fs'
+import { unlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { randomUUID } from 'node:crypto'
 import { DB_PATH, getDb } from './db.ts'
 import { ensureCatalogImported, getCatalogStatus, getColorsForPart, getPalette, lookupPart, searchParts } from './catalog.ts'
 import { isInventoryEmpty, readSnapshotDto } from './repository.ts'
@@ -29,6 +34,7 @@ const ACTIONS: Record<string, ActionFn> = {
   movePiece: actions.movePiece as ActionFn,
   deletePiece: actions.deletePiece as ActionFn,
   importLegacy: actions.importLegacy as ActionFn,
+  restoreBackup: actions.restoreBackup as ActionFn,
 }
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
@@ -79,6 +85,30 @@ export function createApiHandler(): ApiHandler {
   }
 }
 
+/**
+ * Streams a consistent copy of the database file. `VACUUM INTO` is SQLite's own
+ * way to take one — copying the file by hand while the server is running would
+ * miss whatever is still in the write-ahead log.
+ */
+async function sendDatabaseCopy(res: ServerResponse): Promise<void> {
+  const target = join(tmpdir(), `lego-inventory-${randomUUID()}.sqlite`)
+  getDb().prepare('VACUUM INTO ?').run(target)
+  const filename = `lego-inventory-${new Date().toISOString().slice(0, 10)}.sqlite`
+
+  res.writeHead(200, {
+    'content-type': 'application/vnd.sqlite3',
+    'content-disposition': `attachment; filename="${filename}"`,
+    'cache-control': 'no-store',
+  })
+  await new Promise<void>((resolve, reject) => {
+    const stream = createReadStream(target)
+    stream.on('error', reject)
+    stream.on('end', resolve)
+    stream.pipe(res)
+  })
+  await unlink(target).catch(() => {})
+}
+
 async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
   const route = url.pathname.slice('/api'.length)
 
@@ -90,6 +120,8 @@ async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Prom
       }
       case '/inventory':
         return sendJson(res, 200, readSnapshotDto())
+      case '/export/database':
+        return sendDatabaseCopy(res)
       case '/catalog/part':
         return sendJson(res, 200, { part: lookupPart(url.searchParams.get('number') ?? '') })
       case '/catalog/colors': {

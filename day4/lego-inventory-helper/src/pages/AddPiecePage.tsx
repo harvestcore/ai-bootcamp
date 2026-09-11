@@ -4,7 +4,9 @@ import { CompartmentGrid } from '../components/CompartmentGrid'
 import { ColorSwatch } from '../components/ColorSwatch'
 import { PieceIdentityFields } from '../components/PieceIdentityFields'
 import { Button, Callout, Card, Chip, EmptyState, Field, TextArea, TextInput } from '../components/ui'
+import { PieceImage } from '../components/PieceImage'
 import { useInventory } from '../hooks/useInventory'
+import { plural } from '../lib/format'
 import { addToExistingPiece, createPieceAtLocation, setPartitionCount } from '../lib/store'
 import {
   findDuplicate,
@@ -17,7 +19,16 @@ import {
 } from '../lib/inventory'
 import type { Piece, PieceDraft } from '../types'
 
-type Step = 'details' | 'duplicate' | 'location' | 'partition'
+type Step = 'details' | 'duplicate' | 'location' | 'partition' | 'done'
+
+interface JustAdded {
+  description: string
+  colorName: string
+  quantity: number
+  imageUrl: string | null
+  unitId: string
+  compartmentIndex: number
+}
 
 const PARTITION_LABELS: Record<number, string> = { 1: 'Whole', 2: 'Halves', 3: 'Thirds' }
 
@@ -50,6 +61,10 @@ export function AddPiecePage() {
   const [duplicate, setDuplicate] = useState<Piece | null>(null)
   const [target, setTarget] = useState<{ unitId: string; compartmentIndex: number } | null>(null)
   const [saving, setSaving] = useState(false)
+  const [justAdded, setJustAdded] = useState<JustAdded | null>(null)
+  // Salvaging a set means entering piece after piece, so the flow stays put and
+  // counts them instead of bouncing back to a screen you'd leave immediately.
+  const [addedCount, setAddedCount] = useState(0)
 
   if (snapshot.units.length === 0) {
     return (
@@ -73,23 +88,54 @@ export function AddPiecePage() {
   async function save(unitId: string, compartmentIndex: number) {
     setSaving(true)
     try {
-      await createPieceAtLocation(draft, unitId, compartmentIndex)
-      navigate(`/unit/${unitId}/compartment/${compartmentIndex}`)
+      const piece = await createPieceAtLocation(draft, unitId, compartmentIndex)
+      finishWith({
+        description: piece.description,
+        colorName: piece.color.name,
+        quantity: piece.quantity,
+        imageUrl: piece.imageUrl,
+        unitId,
+        compartmentIndex,
+      })
     } finally {
       setSaving(false)
     }
   }
 
+  function finishWith(added: JustAdded) {
+    setJustAdded(added)
+    setAddedCount((count) => count + 1)
+    setStep('done')
+  }
+
+  function startAnother(keepPartNumber: boolean) {
+    setDraft({
+      partNumber: keepPartNumber ? draft.partNumber : '',
+      color: null,
+      quantity: 1,
+      notes: '',
+    })
+    setDuplicate(null)
+    setTarget(null)
+    setJustAdded(null)
+    setStep('details')
+  }
+
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-ink">Add a piece</h1>
-        <Button variant="ghost" onClick={() => navigate(-1)}>
-          Cancel
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Add a piece</h1>
+          {addedCount > 0 ? (
+            <p className="text-sm text-ink-muted">{plural(addedCount, 'piece')} added so far</p>
+          ) : null}
+        </div>
+        <Button variant="ghost" onClick={() => (addedCount > 0 ? navigate('/') : navigate(-1))}>
+          {addedCount > 0 ? 'Done' : 'Cancel'}
         </Button>
       </div>
 
-      <Steps current={step} />
+      {step === 'done' ? null : <Steps current={step} />}
 
       {step === 'details' ? (
         <DetailsStep
@@ -121,7 +167,14 @@ export function AddPiecePage() {
             setSaving(true)
             try {
               await addToExistingPiece(duplicate.id, draft.quantity)
-              navigate(`/unit/${duplicate.unitId}/compartment/${duplicate.compartmentIndex}`)
+              finishWith({
+                description: duplicate.description,
+                colorName: duplicate.color.name,
+                quantity: draft.quantity,
+                imageUrl: duplicate.imageUrl,
+                unitId: duplicate.unitId,
+                compartmentIndex: duplicate.compartmentIndex,
+              })
             } finally {
               setSaving(false)
             }
@@ -141,6 +194,17 @@ export function AddPiecePage() {
         />
       ) : null}
 
+      {step === 'done' && justAdded ? (
+        <AddedStep
+          added={justAdded}
+          snapshot={snapshot}
+          onAnother={startAnother}
+          onGoToCompartment={() =>
+            navigate(`/unit/${justAdded.unitId}/compartment/${justAdded.compartmentIndex}`)
+          }
+        />
+      ) : null}
+
       {step === 'partition' && target ? (
         <PartitionStep
           snapshot={snapshot}
@@ -155,6 +219,47 @@ export function AddPiecePage() {
         />
       ) : null}
     </div>
+  )
+}
+
+function AddedStep({
+  added,
+  snapshot,
+  onAnother,
+  onGoToCompartment,
+}: {
+  added: JustAdded
+  snapshot: InventorySnapshot
+  onAnother: (keepPartNumber: boolean) => void
+  onGoToCompartment: () => void
+}) {
+  return (
+    <Card className="space-y-4 p-4">
+      <div className="flex items-center gap-3">
+        <PieceImage imageUrl={added.imageUrl} size={56} />
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-success">Added to your inventory</p>
+          <p className="font-medium break-words text-ink">
+            {added.quantity} × {added.description}
+          </p>
+          <p className="text-xs text-ink-muted">
+            {added.colorName} · {locationLabel(snapshot, added.unitId, added.compartmentIndex)}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button variant="primary" className="flex-1" onClick={() => onAnother(false)}>
+          Add another piece
+        </Button>
+        <Button className="flex-1" onClick={() => onAnother(true)}>
+          Same part, another color
+        </Button>
+      </div>
+      <Button variant="ghost" size="sm" onClick={onGoToCompartment}>
+        See the compartment →
+      </Button>
+    </Card>
   )
 }
 

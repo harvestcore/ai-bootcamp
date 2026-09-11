@@ -9,6 +9,7 @@ import { DrawerUnitPage } from './pages/DrawerUnitPage'
 import { EditPiecePage } from './pages/EditPiecePage'
 import { HomePage } from './pages/HomePage'
 import { MovementLogPage } from './pages/MovementLogPage'
+import { PiecesPage } from './pages/PiecesPage'
 
 export function App() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -38,6 +39,7 @@ export function App() {
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
+          <Route path="pieces" element={<PiecesPage />} />
           <Route path="unit/:id" element={<DrawerUnitPage />} />
           <Route path="unit/:id/compartment/:index" element={<DrawerUnitPage />} />
           <Route path="add" element={<AddPiecePage />} />

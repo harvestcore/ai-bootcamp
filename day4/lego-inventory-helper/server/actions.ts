@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { transaction } from './db.ts'
+import { getDb, transaction } from './db.ts'
 import { getImageForPartColor, lookupPart } from './catalog.ts'
 import {
   deletePieceRow,
@@ -403,6 +403,51 @@ export function deletePiece(input: { pieceId: string }): ActionResponse {
       locations: [{ unitId: piece.unitId, compartmentIndex: piece.compartmentIndex }],
     })
     return respond(undefined)
+  })
+}
+
+// ---------- Restore from an exported backup ----------
+
+export interface BackupPayload {
+  drawerUnits?: unknown[]
+  compartments?: unknown[]
+  pieces?: unknown[]
+  movementLog?: unknown[]
+}
+
+/**
+ * Replaces the whole inventory with the contents of an exported JSON file.
+ * Destructive by design — restoring a backup means "make it look like this" —
+ * so the UI confirms first, and an empty payload is refused rather than
+ * silently wiping everything because someone picked the wrong file.
+ *
+ * The catalog tables are untouched: they're derived data, not the user's.
+ */
+export function restoreBackup(input: BackupPayload): ActionResponse<{
+  units: number
+  pieces: number
+}> {
+  const units = (input.drawerUnits ?? []).map(normalizeLegacyUnit).filter(isPresent)
+  const pieces = (input.pieces ?? []).map(normalizeLegacyPiece).filter(isPresent)
+  const compartments = (input.compartments ?? []).map(normalizeLegacyCompartment).filter(isPresent)
+  const log = (input.movementLog ?? []).map(normalizeLegacyMovement).filter(isPresent)
+
+  if (units.length === 0 && pieces.length === 0) {
+    throw new Error("That file doesn't contain a drawer unit or a single piece — nothing was changed.")
+  }
+
+  return transaction(() => {
+    const db = getDb()
+    db.exec('DELETE FROM movement_log')
+    db.exec('DELETE FROM pieces')
+    db.exec('DELETE FROM compartments')
+    db.exec('DELETE FROM drawer_units')
+
+    for (const unit of units) upsertUnit(unit)
+    for (const record of compartments) writeCompartmentRecord(record)
+    for (const piece of pieces) upsertPiece(piece)
+    for (const entry of log) insertMovement(entry)
+    return respond({ units: units.length, pieces: pieces.length })
   })
 }
 
