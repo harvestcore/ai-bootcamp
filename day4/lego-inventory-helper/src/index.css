@@ -1,0 +1,151 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens.
+ *
+ * Every color is declared once as a semantic CSS variable (canvas, surface,
+ * ink, brand…) and re-exported to Tailwind through `@theme inline`, so classes
+ * like `bg-surface` / `text-ink-muted` resolve to the variable rather than a
+ * fixed value. Dark mode then only has to redefine the variables — no `dark:`
+ * duplicate for every single utility.
+ *
+ * No web fonts on purpose: this is an offline-first PWA, so it uses the system
+ * font stack rather than anything that needs a network request to look right.
+ */
+@layer base {
+  :root {
+    color-scheme: light dark;
+
+    --canvas: #f6f4f0;
+    --surface: #ffffff;
+    --surface-sunken: #f1eeea;
+    --line: #e3ded6;
+    --line-strong: #cdc6bb;
+    --ink: #1d2330;
+    --ink-muted: #6b7384;
+
+    /* Warm amber reads as "bricks" without borrowing any LEGO branding.
+       Text on top of it is near-black — amber with white text fails contrast. */
+    --brand: #f3b229;
+    --brand-hover: #e5a412;
+    --brand-ink: #2a1f00;
+    --brand-soft: #fdf1d6;
+    --brand-line: #f1d79a;
+
+    --link: #2b5fd4;
+
+    --success: #2f9e5b;
+    --warning: #c8791f;
+    --danger: #d9463d;
+    --danger-soft: #fdeceb;
+    --info: #3a63e0;
+    --edit: #8358d4;
+
+    --cell-empty: #efece6;
+    --cell-filled: #fdf1d6;
+    --cell-line: #dfd8cc;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --canvas: #0f1218;
+      --surface: #181c25;
+      --surface-sunken: #131720;
+      --line: #2a3040;
+      --line-strong: #3a4255;
+      --ink: #e9ecf3;
+      --ink-muted: #98a1b4;
+
+      --brand: #f3b229;
+      --brand-hover: #ffc44d;
+      --brand-ink: #241a00;
+      --brand-soft: #35280d;
+      --brand-line: #574219;
+
+      --link: #8fb1ff;
+
+      --success: #4cba77;
+      --warning: #e0973c;
+      --danger: #f0625a;
+      --danger-soft: #3a2023;
+      --info: #7b96ee;
+      --edit: #a785e8;
+
+      --cell-empty: #1d222d;
+      --cell-filled: #35280d;
+      --cell-line: #333b4c;
+    }
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    /* Room for the mobile tab bar, plus the iOS home indicator. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* One consistent focus ring everywhere, keyboard-only. */
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-line: var(--brand-line);
+
+  --color-link: var(--link);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-edit: var(--edit);
+
+  --color-cell-empty: var(--cell-empty);
+  --color-cell-filled: var(--cell-filled);
+  --color-cell-line: var(--cell-line);
+
+  --radius-card: 1rem;
+}
+
+@utility hatched {
+  /* "Marked full" overlay for compartment cells. */
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--ink) 14%, transparent) 0 4px,
+    transparent 4px 9px
+  );
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -346,3 +346,69 @@ This changes the "fetch within 2 seconds" acceptance criterion from Round 1 into
 5. ⏭️ Start development and implementation
 
 **Deferred to a future iteration:** a dedicated visual design pass (concrete colors, typography, spacing scale). Not needed for v1 — `lego-inventory-ux-ui.md` already defines structure, states, and interactions; implementation can proceed with a plain/utilitarian look and this can be revisited later.
+
+## Round 6: React rewrite + visual design pass (09/11)
+
+### Clarification 24: Rewrite the implementation in React
+
+**Question:** The first implementation was vanilla JS with template strings and a hand-rolled
+router/renderer. Keep it, or rewrite?
+**Answer:** Rewrite it in **React**. Reason given: the hand-rolled rendering style is hard to follow
+for someone who doesn't work in it day-to-day, and ordinary React code is what tutorials, colleagues
+and AI assistants all assume. Behaviour stays exactly as specified — this is an implementation and
+design change, not a product change.
+
+### Clarification 25: Routing, styling and language
+
+**Question:** Which router, which styling approach, JavaScript or TypeScript?
+**Answer:** A **single-page app**, so `react-router-dom` (with `HashRouter`, keeping the app working
+offline and from any path without server rewrites); **Tailwind CSS** for styling; **TypeScript** for
+the code. Full dependency list is now React, react-dom, react-router-dom (runtime) plus Vite,
+TypeScript, Tailwind and the two Vite plugins (dev).
+
+### Clarification 26: Visual design
+
+**Question:** The deferred visual-design pass (Round 5) — what should it produce?
+**Answer:** A friendlier look than the utilitarian v1: a warm palette built on semantic design tokens
+(with automatic dark mode), a persistent app shell with a header and a mobile tab bar instead of a
+per-screen back link, cards and empty states, real confirmation dialogs for destructive actions
+instead of a button that relabels itself, a stats row on the home screen, and compartment grids
+capped at a readable cell size. No web fonts — an offline-first app shouldn't depend on the network
+to render its text.
+
+**This closes the "deferred visual design pass" left open at the end of Round 5.**
+
+## Round 7: Storage moves to a SQLite file (09/11)
+
+### Clarification 27: What "local storage" should mean
+
+**Question:** The app already kept everything locally, in the browser's IndexedDB. Asked for "local
+storage, in a SQLite for example", which can mean three quite different things: SQLite compiled to
+WebAssembly inside the browser (still a PWA), a real `.sqlite` file on disk (needs a process outside
+the browser), or SQLite-over-IndexedDB.
+**Answer:** A **real `.sqlite` file on disk**, holding **both the inventory and the catalog**.
+Accepted consequence: the app stops being an installable offline PWA and needs a local process
+running to serve it.
+
+### Clarification 28: What runs the database
+
+**Question:** Electron, Tauri, or a small local server?
+**Answer (implementation call, not a product decision):** a small **Node server using the built-in
+`node:sqlite`** module, serving the same React UI. It adds **zero runtime dependencies** — Electron
+or Tauri would each pull in a desktop build chain (and Tauri a Rust toolchain) for what is, today, a
+storage change. Node also runs TypeScript directly now, so the server shares the app's domain types
+and pure domain rules instead of duplicating them. Wrapping this in Electron/Tauri later would not
+require touching the logic.
+
+**Consequences recorded here so they aren't rediscovered later:**
+
+- The bundled CSVs moved out of `public/` (the browser never reads them now, and Vite was copying
+  ~150 MB into `dist/` on every build) into `catalog/`, and are imported into the database on first
+  start.
+- The service worker was deleted: it served same-origin GETs cache-first, which would now mean
+  serving stale API responses. Browsers carrying the old one are cleaned up at boot.
+- A one-time migration reads whatever the previous IndexedDB version stored and hands it to the
+  server, which only accepts it into an empty database. Records from the very first version are
+  missing fields added later (piece photos, notes), so the import normalizes every record — the
+  first attempt failed on exactly that (`Provided value cannot be bound to SQLite parameter 15`),
+  and a failed import now leaves the app usable with a visible warning instead of refusing to start.

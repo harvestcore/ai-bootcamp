@@ -8,12 +8,15 @@ Spec-driven development
 
 A personal inventory management app for loose LEGO bricks stored in workshop drawer organizers.
 
-**Status:** ✅ Implemented — offline-first PWA in [`lego-inventory-helper/`](lego-inventory-helper/)
+**Status:** ✅ Implemented — a local app in [`lego-inventory-helper/`](lego-inventory-helper/):
+React + TypeScript + Tailwind in the browser, a small Node server behind it, and all the data in a
+single SQLite file on disk (`data/inventory.sqlite`) that never leaves the machine.
 
 ```sh
 cd lego-inventory-helper
 npm install
-npm run dev   # http://localhost:5173
+npm run dev        # http://localhost:5173 (UI + API in one process)
+npm run serve      # production build, served on http://127.0.0.1:4173
 ```
 
 **Documentation:**

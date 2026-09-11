@@ -43,24 +43,27 @@ steps (client on GitHub Pages, server on any Node host) in
 
 ### Day 4 — LEGO Brick Inventory
 
-An offline-first PWA to track loose LEGO bricks from completed sets, stored across workshop drawer
+A local app to track loose LEGO bricks from completed sets, stored across workshop drawer
 organizers: search by description or part number, see which drawer/compartment holds them, and get a
 suggested location (grouped by piece type, split into partitions for a second color) when adding new
 pieces.
 
-- **Build:** Vite + vanilla JS, no UI framework — the app needed a real build step (service worker,
-  IndexedDB, several screens) but not a framework on top of it.
-- **Data:** fully offline via IndexedDB; the LEGO parts/colors catalog is
-  [Rebrickable's free CSV download](https://rebrickable.com/downloads/), bundled locally and indexed
-  on first launch — no live API calls. No part images are bundled (Rebrickable doesn't include them
-  in the CSV export; real ones need a personal API key), so every piece shows a generic placeholder.
+- **Build:** React + TypeScript + Tailwind CSS in the browser (Vite), with a small Node server
+  behind it. (It started as vanilla JS with template strings storing everything in the browser, and
+  was rewritten twice from there — first into React, then onto a real database.)
+- **Data:** one SQLite file on disk, `data/inventory.sqlite`, holding both the inventory and the
+  LEGO catalog — written through Node's built-in `node:sqlite`, so there is no database dependency
+  at all. Nothing leaves the machine: no account, no cloud, no API key. The catalog is
+  [Rebrickable's free CSV download](https://rebrickable.com/downloads/), imported into the file on
+  first start; real piece photos come from the `img_url` column in that same download (the only
+  thing the app ever fetches from the network).
 - **Movement log:** every add/extract/move/edit/delete is recorded in one global, filterable audit
   trail.
 
 ```sh
 cd day4/lego-inventory-helper
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:5173 (UI + local API in one process)
 ```
 
 Spec, UX/UI design, and decision history live in [day4/](day4/); implementation decisions and
