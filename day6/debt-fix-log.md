@@ -8,6 +8,10 @@ left untouched. One item per session, always two commits: a failing test first, 
 
 ## Environment notes (read before starting an item)
 
+- **.NET 9 is now installed** at `~/.dotnet` (see [`log.md`](./log.md)); use
+  `export DOTNET_ROOT=$HOME/.dotnet PATH=$HOME/.dotnet:$PATH` and leave `global.json` alone.
+  The note below is kept for history and no longer applies:
+
 - **No .NET 9 SDK or runtime on this machine.** Installed: 8.x and 10.x. `global.json` pins
   `9.0.100` with `rollForward: latestFeature`, so `dotnet` refuses to load at all in this repo.
   To build and test:
