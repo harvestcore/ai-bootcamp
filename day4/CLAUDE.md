@@ -133,6 +133,8 @@ cd lego-inventory-helper
 npm install
 npm run dev        # dev server + API on http://localhost:5173 (one process)
 npm run typecheck  # tsc --noEmit (checks src/ and server/ together)
+npm test           # the domain-logic suite, on Node's built-in runner (no dependency)
+npm run test:coverage   # same, with the built-in line/branch coverage report
 npm run build      # typecheck + build to dist/
 npm start          # production: serve dist/ + API on http://127.0.0.1:4173
 npm run serve      # build, then start
@@ -145,16 +147,33 @@ seconds — and the UI shows the progress the server reports via `GET /api/statu
 Useful while debugging: the database is an ordinary SQLite file, so
 `sqlite3 data/inventory.sqlite 'select * from pieces'` (or any GUI) shows exactly what the app sees.
 
-No test tooling is configured yet (matches day1's stance) — verified so far by `npm run build`
-(which typechecks first, catching import/type errors) and by driving the running app with a scripted
-headless browser (Playwright, installed ad hoc in a scratch directory, **not** a project dependency)
-to exercise: the catalog import, drawer setup, the full Add-piece flow (details → duplicate
-detection → location → partition split), search, extraction to zero, editing, the history view, the
-mobile and dark-mode layouts, the production server, and the one-time migration from the old
-browser-stored data (including records shaped like the very first version, missing the fields added
-later). All passed with no console errors. If real automated tests get added later, raise the
-tooling choice first (per the root CLAUDE.md's "don't decide on external libraries without
-asking").
+### Tests
+
+`npm test` runs the suite on **Node's built-in test runner** (`node --test`), adding **no
+dependency at all**: Node strips the TypeScript directly, exactly the way `npm start` already runs
+`server/*.ts`. `npm run test:coverage` is the same run with the built-in coverage report.
+
+The suite deliberately covers **only the pure domain helpers** — `src/lib/inventory.ts` and
+`src/lib/matching.ts`, tested by `src/lib/*.test.ts` with shared builders in
+`src/lib/testFixtures.ts`. That is where every rule in the spec actually lives, and it is reachable
+without a server, a database or a browser. The tests sit next to the code (rather than in a `test/`
+folder) so `npm run typecheck` checks the fixtures against the real domain types — a fixture that
+drifts from `types.ts` fails the build instead of quietly testing a shape the app never produces.
+Nothing in the app imports them, so Vite never bundles them.
+
+Everything else is verified the way it was before: `npm run build` (which typechecks first, catching
+import/type errors) and driving the running app with a scripted headless browser (Playwright,
+installed ad hoc in a scratch directory, **not** a project dependency) to exercise: the catalog
+import, drawer setup, the full Add-piece flow (details → duplicate detection → location → partition
+split), search, extraction to zero, editing, the history view, the mobile and dark-mode layouts, the
+production server, and the one-time migration from the old browser-stored data (including records
+shaped like the very first version, missing the fields added later). All passed with no console
+errors.
+
+Covering `server/actions.ts` against a throwaway SQLite file (via `LEGO_DB_PATH`) needs no new
+dependency either and would be the next worthwhile step; the React components would need a DOM
+runner and a testing library, so **raise that tooling choice first** (per the root CLAUDE.md's
+"don't decide on external libraries without asking").
 
 ## Architecture
 
@@ -193,6 +212,8 @@ lego-inventory-helper/
       catalog.ts            catalog lookups over the API, memoized per part number
       legacyBrowserData.ts  reads (and then deletes) the previous IndexedDB storage
       ids.ts, format.ts, cn.ts   id/key helpers, date formatting, className joining
+      inventory.test.ts, matching.test.ts   the domain-logic suite (`npm test`)
+      testFixtures.ts       test-only snapshot/piece/unit builders, not imported by the app
     hooks/
       useInventory.ts       useSyncExternalStore bridge to the store
       useCatalog.ts         async catalog lookups (part name, per-part colors, catalog search)
