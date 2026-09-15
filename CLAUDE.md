@@ -26,6 +26,36 @@ day1/    Draw & Guess — multiplayer draw-and-guess game (Node + Socket.IO)
 - **One license for the whole repo:** MIT, in the root `LICENSE`. Don't add per-day `LICENSE` files or
   `license` fields to a day's `package.json` (the day packages are `private`).
 
+## Agents
+
+`.claude/agents/` holds the subagents shared by every day. Each one has a single job,
+a restricted tool set, an explicit output shape and a "not my job" section, and each
+is a thin wrapper that gives a skill in `.claude/skills/` an identity and a place in
+the workflow.
+
+| Agent | Job | Skills it uses | Produces |
+| --- | --- | --- | --- |
+| `architect` | description → spec | `spec` | `dayN/<slug>.spec.md` + acceptance criteria |
+| `implementer` | spec → change | `security-doctor` (on a security report) | edited files + per-criterion report |
+| `tester` | change → tests | `tester`, `enumerate-behaviours`, `cover-the-gaps`, `regression-fixture`, `kill-flakes` | test files + a real run result |
+| `reviewer` | diff → review | `pr-review` | severity-rated comments + verdict |
+| `security-analyst` | diff → security audit | `security-analyst`, `white-hat` (only on request) | findings with entry→path→sink + fixes to apply elsewhere |
+| `debt-auditor` | module → debt menu | `debt-audit` | `dayN/debt-audit.md`, items with an interest rate |
+| `triager` | issue → automatable? | `triage` | `AUTOMATE` / `SEMI-AUTOMATE` / `HUMAN-REQUIRED` |
+| `release-captain` | commits → ship/hold | `safe-release` | `dayN/release-readiness.md` + rollback note |
+
+The main chain is architect → implementer → tester → reviewer, with
+`security-analyst` on any diff touching auth, data or external input, and
+`implementer` re-invoked with its report to close the findings. `debt-auditor`,
+`triager` and `release-captain` are entry points of their own.
+
+Two rules hold for all of them: **none of them commit** — that stays with the user —
+and none of them can ask a question mid-run, so a blocked agent delivers everything
+that is not blocked and reports the question instead of stopping.
+
+`grill-me` is deliberately not wrapped in an agent: it is an interview with the user,
+so it only works invoked directly.
+
 ## Language
 
 **Everything written in this repository is in English** — docs, `CLAUDE.md` files, code, comments,
