@@ -15,13 +15,15 @@ export function CompartmentPanel({
   index,
   snapshot,
   onClose,
+  onAddPiece,
 }: {
   unit: DrawerUnit
   index: number
   snapshot: InventorySnapshot
   onClose: () => void
+  /** Asks the page to open the add-piece modal over it — no navigation. */
+  onAddPiece: () => void
 }) {
-  const navigate = useNavigate()
   const panel = useRef<HTMLDivElement>(null)
   const { occupants, record } = getCompartmentInfo(snapshot, unit.id, index)
   const partitions = Array.from({ length: record.partitionCount }, (_, i) => i)
@@ -76,7 +78,12 @@ export function CompartmentPanel({
         <Button
           variant="primary"
           className="w-full"
-          onClick={() => navigate(`/add?unit=${unit.id}&compartment=${index}`)}
+          // Focused explicitly: the modal hands focus back to whatever had it
+          // when it opened, and not every browser focuses a clicked button.
+          onClick={(e) => {
+            e.currentTarget.focus()
+            onAddPiece()
+          }}
         >
           Add a piece here
         </Button>

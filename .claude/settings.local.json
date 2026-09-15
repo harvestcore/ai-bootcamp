@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Artifact",
+      "WebSearch",
+      "WebFetch(domain:rebrickable.com)",
+      "Bash(mv *)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(npm *)",
+      "Bash(node *)",
+      "Read",
+      "Edit",
+      "Write"
+    ]
+  }
+}

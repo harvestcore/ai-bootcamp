@@ -36,6 +36,20 @@ export function compartmentCount(unit: DrawerUnit): number {
   return unit.rows * unit.cols
 }
 
+/**
+ * Where a compartment sits on the unit's front face. Row 0 is the top row.
+ *
+ * The grid lays compartments out left-to-right then top-to-bottom, and the 3D
+ * view has to place the same index in the same physical spot — so the mapping
+ * lives here, once, rather than in either renderer.
+ */
+export function compartmentPosition(
+  unit: DrawerUnit,
+  index: number,
+): { row: number; col: number } {
+  return { row: Math.floor(index / unit.cols), col: index % unit.cols }
+}
+
 /** The stored record for a compartment, or the implicit "untouched" default. */
 export function getCompartmentRecord(
   snap: InventorySnapshot,

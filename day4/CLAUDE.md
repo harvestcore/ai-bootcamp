@@ -88,6 +88,14 @@ Decided with the user, so do not re-litigate:
   snapshot (occupants, suggestions, duplicates, search, stats) as a pure function taking the
   snapshot; `src/lib/store.ts` holds the writes. Keep new derived logic in `inventory.ts` — it is
   safe to call during render and easy to reason about in isolation.
+- **The add-piece flow has one implementation and two hosts.** `AddPieceWizard` is the flow;
+  `AddPiecePage` (`/add`, still a real linkable screen and what every other entry point opens) and
+  the modal `DrawerUnitPage` opens over a selected compartment are just hosts, passing in
+  `openedFrom` and what "cancel" and "see the compartment" mean. Opened from a compartment the modal
+  is **deliberately not in the URL** (in-memory state: a reload lands on the unit page with it
+  closed, and Back leaves the page rather than closing the modal), it reads and writes no search
+  param — so it can't disturb `?view=3d` — and closing it with a half-typed piece is confirmed
+  first. See [`add-piece-modal.spec.md`](lego-inventory-helper/add-piece-modal.spec.md).
 - **Visual design:** one palette of semantic CSS variables (`canvas`, `surface`, `ink`, `brand`, …)
   in `src/index.css`, re-exported to Tailwind via `@theme inline`, so utilities read `bg-surface` /
   `text-ink-muted` and dark mode only redefines the variables (no `dark:` duplicate per utility).
@@ -182,6 +190,7 @@ lego-inventory-helper/
   index.html               mounts #app, loads src/main.tsx
   vite.config.ts           base './', react + tailwind plugins, and the API as dev middleware
   tsconfig.json            strict, bundler resolution, react-jsx; covers src/ AND server/
+  .npmrc                   legacy-peer-deps, for @react-three/fiber's stale react peer range
   data/inventory.sqlite    THE DATABASE (gitignored): inventory + imported catalog
   catalog/                 the Rebrickable CSVs + CATALOG.md — import source, never served
   public/
@@ -224,21 +233,38 @@ lego-inventory-helper/
       CompartmentGrid.tsx   one unit's grid; same component for the Home preview, the unit view
                             and the location/move pickers
       CompartmentPanel.tsx  what's inside one compartment (extract, mark full, edit, delete);
-                            scrolls itself into view on phones, where it renders below the grid
+                            scrolls itself into view on phones, where it renders below the grid.
+                            "Add a piece here" doesn't navigate: it asks the page to open the modal
+      DrawerUnit3DPane.tsx  the 3D view's frame: the WebGL check, the React.lazy of the scene, the
+                            "Loading 3D…" state and the "3D isn't available" fallback. Imports no
+                            three, so the grid view never downloads it
+      DrawerUnit3D.tsx      the same unit as an open-fronted cabinet (react-three-fiber). The ONLY
+                            module that imports three; colors read off the CSS design tokens, and
+                            state per compartment from the same getCompartmentInfo the grid uses
       PieceRow.tsx          one piece as a row, shared by the home search and the All pieces list
       ColorPicker.tsx, ColorSwatch.tsx, PartSearch.tsx, PieceImage.tsx, ActionTag.tsx
       PieceIdentityFields.tsx   the part-number + catalog-name + color block shared by Add and Edit
+      AddPieceWizard.tsx    the whole add-piece flow (the five steps, the step machine, the draft),
+                            host-agnostic: it navigates nowhere and reads no search param, so the
+                            same implementation serves the `/add` page and the modal
+      Modal.tsx             the modal shell: portal on `document.body`, dimmed inert backdrop, real
+                            focus trap, focus handed back to the opener, body scroll lock. Hosts
+                            AddPieceWizard; ConfirmDialog predates it and is left alone
       ConfirmDialog.tsx     modal confirmation for destructive actions
     pages/
       HomePage.tsx          search + stats + unit cards
       PiecesPage.tsx        the whole inventory as one list: sort by name/quantity/location,
                             filter by color and unit — what the drawer grids can't answer
       DrawerUnitPage.tsx    one unit's grid with the compartment panel beside/below it; the title
-                            is click-to-rename
-      AddPiecePage.tsx      the add wizard (details → duplicate? → location → partition split? →
-                            confirmation). The confirmation step keeps you in the flow ("add
-                            another", "same part, another color") because salvaging a set means
-                            entering pieces one after another
+                            is click-to-rename. The only screen with the Grid/3D toggle: the chosen
+                            view is the `view` search param of its own URL (`?view=3d`, written with
+                            `replace`), so every navigation inside the page carries it along.
+                            Also owns the add-piece modal (open/closed is plain React state, never
+                            a URL param) and the "discard this piece?" guard around closing it
+      AddPiecePage.tsx      the `/add` route: a thin wrapper around AddPieceWizard. It owns only
+                            what belongs to being a page — the `unit`/`compartment` query params,
+                            the "set up a drawer unit first" empty state, and turning the wizard's
+                            two exits into navigation
       EditPiecePage.tsx     edit identity/notes, move, delete
       DrawerSetupPage.tsx   first-run setup, rename/resize/delete units, and the Backups section
       MovementLogPage.tsx   history with unit/compartment filters in the URL
@@ -276,6 +302,19 @@ in `src/lib/inventory.ts`, shared by both sides; the writes are in `server/actio
   tool, or an image library for icons) — the current set (React, react-router-dom, Tailwind,
   TypeScript, Vite, plus `@types/node`) is deliberately the whole list, and the server deliberately
   uses only Node built-ins. You can suggest, but ask before adding.
+  **The one sanctioned exception is the 3D drawer view:** `three`, `@react-three/fiber` and
+  `@react-three/drei` were approved by the user for this day only, to render a unit as the physical
+  cabinet it is (`src/components/DrawerUnit3D.tsx`, see the spec
+  [`3d-drawer-view.spec.md`](lego-inventory-helper/3d-drawer-view.spec.md)). Those three and nothing
+  else: no post-processing, physics, animation, loader or font package, no HDRI/environment preset
+  and no CDN-hosted asset — the 3D view adds no second network call (the stripe pattern for "marked
+  full" is a texture generated in a 2D canvas, and the compartment numbers are HTML, not 3D text).
+  They are imported from exactly one module, loaded with `React.lazy`, so the grid view and Home
+  never download them. `three` is pinned to `^0.182.x` on purpose: 0.183 deprecates `THREE.Clock`,
+  which `@react-three/fiber` still uses, and the console must stay clean.
+  `.npmrc` sets `legacy-peer-deps=true` for the same reason — `@react-three/fiber` still declares
+  `react: >=19 <19.3` while this project is on React 19.3, and strict peer resolution would also
+  pull its optional `expo` / `react-native` peers into a browser-only app.
 - Don't write data access straight from a page or component: the browser has no database. Reads go
   through `useInventory()`, writes through the action functions in `src/lib/store.ts`, and the SQL
   itself stays in `server/`.

@@ -10,6 +10,7 @@ export function ConfirmDialog({
   open,
   title,
   confirmLabel = 'Delete',
+  cancelLabel = 'Cancel',
   destructive = true,
   onConfirm,
   onCancel,
@@ -18,6 +19,7 @@ export function ConfirmDialog({
   open: boolean
   title: string
   confirmLabel?: string
+  cancelLabel?: string
   destructive?: boolean
   onConfirm: () => void
   onCancel: () => void
@@ -44,7 +46,7 @@ export function ConfirmDialog({
           <h2 className="text-base font-semibold text-ink">{title}</h2>
           {children ? <div className="mt-2 text-sm text-ink-muted">{children}</div> : null}
           <div className="mt-5 flex justify-end gap-2">
-            <Button onClick={onCancel}>Cancel</Button>
+            <Button onClick={onCancel}>{cancelLabel}</Button>
             <Button variant={destructive ? 'danger' : 'primary'} onClick={onConfirm} autoFocus>
               {confirmLabel}
             </Button>
