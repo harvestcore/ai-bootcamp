@@ -49,6 +49,13 @@ The main chain is architect → implementer → tester → reviewer, with
 `implementer` re-invoked with its report to close the findings. `debt-auditor`,
 `triager` and `release-captain` are entry points of their own.
 
+`.claude/skills/build-feature/` is the runner for the main chain: it calls
+architect → implementer → tester → reviewer in sequence, splices in
+`security-analyst` on an escalation, and loops reviewer↔implementer up to three
+rounds on must-fix comments. It is a skill, not an agent, precisely because the
+orchestrator needs the two powers no agent is given (see below): creating the
+feature branch and stopping to ask the user when a step comes back blocked.
+
 Two rules hold for all of them: **none of them commit** — that stays with the user —
 and none of them can ask a question mid-run, so a blocked agent delivers everything
 that is not blocked and reports the question instead of stopping.
@@ -57,8 +64,10 @@ For the same reason, **none of them create branches either** — before kicking 
 main chain (or `debt-auditor`/`triager`/`release-captain`) for a new feature, create
 and switch to `feature/<slug>` first, so the agents' edits land on that branch instead
 of `main`. Naming follows the existing branches (`feature/close-guesses`,
-`feature/skip-word`, …). This is a step for whoever is orchestrating the agents, not a
-job for any agent itself.
+`feature/skip-word`, …). This is the orchestrator's job, not any agent's: when the
+main chain runs through `build-feature`, that skill creates the branch as its own
+step 0, before `architect` is ever invoked; run manually, the user does it before
+launching the first agent.
 
 `grill-me` is deliberately not wrapped in an agent: it is an interview with the user,
 so it only works invoked directly.
