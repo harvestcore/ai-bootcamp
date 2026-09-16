@@ -52,13 +52,28 @@ The main chain is architect → implementer → tester → reviewer, with
 `.claude/skills/build-feature/` is the runner for the main chain: it calls
 architect → implementer → tester → reviewer in sequence, splices in
 `security-analyst` on an escalation, and loops reviewer↔implementer up to three
-rounds on must-fix comments. It is a skill, not an agent, precisely because the
-orchestrator needs the two powers no agent is given (see below): creating the
-feature branch and stopping to ask the user when a step comes back blocked.
+rounds on must-fix comments. Once reviewer approves, it commits the working tree,
+pushes `feature/<slug>` and opens the PR itself — the only step left for the human
+is merging it. It is a skill, not an agent, precisely because the orchestrator
+needs the three powers no agent is given (see below): creating the feature branch,
+committing/pushing/opening the PR once the diff is approved, and stopping to ask
+the user when a step comes back blocked.
 
-Two rules hold for all of them: **none of them commit** — that stays with the user —
-and none of them can ask a question mid-run, so a blocked agent delivers everything
-that is not blocked and reports the question instead of stopping.
+Two rules hold for all of the **subagents** (architect, implementer, tester,
+reviewer, security-analyst, debt-auditor, triager, release-captain): **none of
+them commit** — committing is the orchestrator's job, not theirs — and none of
+them can ask a question mid-run, so a blocked agent delivers everything that is
+not blocked and reports the question instead of stopping.
+
+The orchestrator (`build-feature`) is the one exception to "none of them commit":
+once reviewer's verdict is `approve`, it commits, pushes and opens the PR as its
+own step, per its skill file. It never merges — that stays a human step regardless
+of how the rest of the cycle went. Pushing and opening the PR both need working
+GitHub credentials (SSH key or HTTPS auth for `git push`, and `gh auth login` for
+`gh pr create`) in the environment the orchestrator runs in; if those aren't
+configured there, it stops right after the local commit and hands the user the
+exact `git push` / `gh pr create` commands to run themselves — it does not treat a
+missing credential as a reason to skip the commit it can make.
 
 For the same reason, **none of them create branches either** — before kicking off the
 main chain (or `debt-auditor`/`triager`/`release-captain`) for a new feature, create
