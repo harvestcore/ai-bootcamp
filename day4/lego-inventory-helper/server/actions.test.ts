@@ -198,29 +198,26 @@ describe('addToExistingPiece (the quick-add write)', () => {
     assert.equal(snapshot.pieces[0]!.quantity, 5)
   })
 
-  // Characterisation, not an endorsement: the action itself validates nothing
-  // (unlike `extractPiece`, which throws on an out-of-range quantity). The
-  // clamp to >= 1 integers lives only in the UI's `QuantityInput`, so this
-  // test exists to make that split explicit — if it ever moves into the
-  // action, this test is the one that should be rewritten, deliberately.
+  // The quantity rule (whole numbers >= 1) can't live in the UI alone: a
+  // request reaches the API without passing through `QuantityInput`. So the
+  // action rejects an out-of-range amount the way `extractPiece` does.
   // @ai-generated
-  test('does not validate the quantity: a negative amount lowers stock under an `add` entry', () => {
+  test('rejects a quantity that is not a whole number >= 1', () => {
     const { piece } = seed({ quantity: 5 })
 
-    const { result, snapshot } = addToExistingPiece({ pieceId: piece.id, quantity: -2 })
-
-    assert.equal(result?.quantity, 3)
-    const details = addEntriesFor(snapshot.log, piece.description).map((e) => e.detail)
-    assert.ok(
-      details.some((d) => d.startsWith('+-2 ')),
-      `expected a "+-2" detail, got ${JSON.stringify(details)}`,
-    )
+    for (const quantity of [-2, 0, 1.5, Number.NaN]) {
+      assert.throws(
+        () => addToExistingPiece({ pieceId: piece.id, quantity }),
+        /Invalid quantity/,
+        `expected ${quantity} to be rejected`,
+      )
+    }
   })
 
-  // The transaction has to be all-or-nothing: the schema's CHECK (quantity > 0)
-  // rejects the write, and the log entry must not survive it.
+  // The transaction has to be all-or-nothing: a rejected amount must leave
+  // neither the stock nor the log touched.
   // @ai-generated
-  test('rolls back the log entry when the write would drive stock to zero or below', () => {
+  test('writes nothing at all when the quantity is rejected', () => {
     const { piece } = seed({ quantity: 5 })
     const logBefore = readSnapshotDto().log.length
 
@@ -228,6 +225,6 @@ describe('addToExistingPiece (the quick-add write)', () => {
 
     const after = readSnapshotDto()
     assert.equal(after.pieces[0]!.quantity, 5)
-    assert.equal(after.log.length, logBefore, 'the rolled-back add must leave no entry behind')
+    assert.equal(after.log.length, logBefore, 'the rejected add must leave no entry behind')
   })
 })

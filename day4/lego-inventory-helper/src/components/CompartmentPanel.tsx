@@ -195,6 +195,11 @@ function OccupantRow({
       await addToExistingPiece(piece.id, addAmount)
       setForm('none')
       setAddAmount(1)
+    } catch (error) {
+      // A rejected write leaves the form open with the amount still typed in,
+      // so the press can simply be repeated; without this the rejection would
+      // only show up as an uncaught promise in the console.
+      console.error('Could not add to the piece:', error)
     } finally {
       addInFlight.current = false
       setAdding(false)
