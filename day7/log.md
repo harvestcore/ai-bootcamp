@@ -71,4 +71,3 @@ decision made on the user's behalf or demote it to an open question — and runs
 **`white-hat` is opt-in.** `security-analyst` is defensive by default and only red-teams on an explicit
 instruction, writes probes rather than running them, and never probes anything outside the local
 project.
-G
