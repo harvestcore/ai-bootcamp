@@ -53,6 +53,13 @@ Two rules hold for all of them: **none of them commit** — that stays with the 
 and none of them can ask a question mid-run, so a blocked agent delivers everything
 that is not blocked and reports the question instead of stopping.
 
+For the same reason, **none of them create branches either** — before kicking off the
+main chain (or `debt-auditor`/`triager`/`release-captain`) for a new feature, create
+and switch to `feature/<slug>` first, so the agents' edits land on that branch instead
+of `main`. Naming follows the existing branches (`feature/close-guesses`,
+`feature/skip-word`, …). This is a step for whoever is orchestrating the agents, not a
+job for any agent itself.
+
 `grill-me` is deliberately not wrapped in an agent: it is an interview with the user,
 so it only works invoked directly.
 

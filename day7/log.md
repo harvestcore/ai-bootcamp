@@ -14,6 +14,10 @@ then iterated.
 
 Eight agents, not five. Five came from the exercise's suggested team; the other three exist because
 there were skills left with no agent, and `day6/` shows all three of those workflows actually get used.
+The main chain got its own real-use proof a day later: `day4/lego-inventory-helper/` used
+`architect` → `implementer` for two features end to end (a 3D drawer view, an add-piece modal — see
+that day's `*.spec.md` files), with `implementer` reporting criterion by criterion against the spec
+each time, exactly as designed below.
 
 | Agent              | Job                  | Skills                                                                                  | Produces                                          |
 | ------------------ | -------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------- |
