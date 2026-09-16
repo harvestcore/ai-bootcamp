@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { ColorSwatch } from './ColorSwatch'
 import { ConfirmDialog } from './ConfirmDialog'
 import { PieceImage } from './PieceImage'
-import { Button, Card, TextInput } from './ui'
-import { deletePiece, extractPiece, setPartitionFull } from '../lib/store'
+import { Button, Card, QuantityInput, TextInput } from './ui'
+import { addToExistingPiece, deletePiece, extractPiece, setPartitionFull } from '../lib/store'
 import { getCompartmentInfo, type InventorySnapshot } from '../lib/inventory'
 import { formatDate } from '../lib/format'
 import type { DrawerUnit, Piece } from '../types'
@@ -168,16 +168,42 @@ function OccupantRow({
   full: boolean
 }) {
   const navigate = useNavigate()
-  const [extracting, setExtracting] = useState(false)
+  // One inline form at a time per row: opening one closes the other.
+  const [form, setForm] = useState<'none' | 'extract' | 'add'>('none')
   const [amount, setAmount] = useState('1')
+  const [addAmount, setAddAmount] = useState(1)
+  const [adding, setAdding] = useState(false)
+  // The in-flight guard has to be a ref: `adding` is read from a closure and
+  // only updates on the next render, so a second press landing before React
+  // commits it would slip through and log the addition twice.
+  const addInFlight = useRef(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   async function confirmExtract() {
     const qty = Number(amount)
     if (!Number.isInteger(qty) || qty < 1 || qty > piece.quantity) return
     await extractPiece(piece.id, qty)
-    setExtracting(false)
+    setForm('none')
     setAmount('1')
+  }
+
+  async function confirmAdd() {
+    if (addInFlight.current) return
+    addInFlight.current = true
+    setAdding(true)
+    try {
+      await addToExistingPiece(piece.id, addAmount)
+      setForm('none')
+      setAddAmount(1)
+    } catch (error) {
+      // A rejected write leaves the form open with the amount still typed in,
+      // so the press can simply be repeated; without this the rejection would
+      // only show up as an uncaught promise in the console.
+      console.error('Could not add to the piece:', error)
+    } finally {
+      addInFlight.current = false
+      setAdding(false)
+    }
   }
 
   return (
@@ -208,7 +234,22 @@ function OccupantRow({
         </div>
       </div>
 
-      {extracting ? (
+      {form === 'add' ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-sunken p-2">
+          <QuantityInput
+            value={addAmount}
+            onChange={setAddAmount}
+            autoFocus
+            onEnter={confirmAdd}
+          />
+          <Button variant="primary" size="sm" onClick={confirmAdd} disabled={adding}>
+            Add
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setForm('none')} disabled={adding}>
+            Cancel
+          </Button>
+        </div>
+      ) : form === 'extract' ? (
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-sunken p-2">
           <div className="w-24">
             <TextInput
@@ -227,13 +268,22 @@ function OccupantRow({
           <Button variant="primary" size="sm" onClick={confirmExtract}>
             Take out
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setExtracting(false)}>
+          <Button variant="ghost" size="sm" onClick={() => setForm('none')}>
             Cancel
           </Button>
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => setExtracting(true)}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setAddAmount(1)
+              setForm('add')
+            }}
+          >
+            Add
+          </Button>
+          <Button size="sm" onClick={() => setForm('extract')}>
             Take out
           </Button>
           <Button size="sm" onClick={() => navigate(`/edit/${piece.id}`)}>

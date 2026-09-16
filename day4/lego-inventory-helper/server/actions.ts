@@ -238,6 +238,13 @@ export function addToExistingPiece(input: {
   quantity: number
 }): ActionResponse<Piece | null> {
   return transaction(() => {
+    // The UI's QuantityInput clamps to whole numbers >= 1, but a request can
+    // reach the API without ever going through it, so the rule is enforced
+    // here too — same as `extractPiece` below.
+    if (!Number.isInteger(input.quantity) || input.quantity < 1) {
+      throw new Error('Invalid quantity')
+    }
+
     const snapshot = readSnapshot()
     const existing = snapshot.pieces.find((p) => p.id === input.pieceId)
     if (!existing) return respond<Piece | null>(null)

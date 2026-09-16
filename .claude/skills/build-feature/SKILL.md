@@ -3,18 +3,22 @@ name: build-feature
 description: >
     End-to-end feature build that orchestrates the architect, implementer,
     tester and reviewer subagents (escalating to security-analyst when the
-    diff warrants it), looping reviewer↔implementer up to three times before
-    handing off to the human. Use when asked to build, implement or ship a
-    feature "end to end" or to "wire the agents together" for a change.
+    diff warrants it), looping reviewer↔implementer up to three times, then —
+    once approved — commits, pushes and opens the PR itself. The only step left
+    for the human is merging it. Use when asked to build, implement or ship a
+    feature "end to end", to "wire the agents together" for a change, or to
+    fully automate a feature build up to the merge.
 ---
 
 # Build Feature
 
 You are the orchestrator. The subagents cannot commit, cannot branch and cannot ask
-you a follow-up question — this skill exists to cover exactly those three gaps: it
+you a follow-up question — this skill exists to cover exactly those gaps: it
 creates the branch before any agent runs, carries every artefact from one agent to
-the next, and is the one place that stops and asks the user when an agent reports
-back blocked.
+the next, is the one place that stops and asks the user when an agent reports back
+blocked, and — once reviewer approves — is the one place that commits, pushes and
+opens the PR. Merging the PR is the only step this skill never takes; that always
+stays with the human.
 
 ## Handoff shape (read this before running anything)
 
@@ -34,7 +38,8 @@ disagreement doesn't run forever.
 | reviewer          | security-analyst  | *(conditional)* the same working-tree diff, only on Escalate  |
 | reviewer / security-analyst | implementer (loop) | the must-fix comment list / findings, unchanged        |
 | reviewer          | you (approve)     | verdict: approve                                              |
-| you               | user              | final summary; nothing is committed, pushed or opened as a PR |
+| you               | GitHub            | commit + push `feature/<slug>` + opened PR (only on approve)  |
+| you               | user              | PR link (or, if blocked/unresolved/credentials missing, exactly what stopped and what's needed) |
 
 Every artefact that matters is also a message in *your* turn, not just a file on
 disk — an agent's tool calls are invisible to you, only its final message is, so
@@ -127,27 +132,56 @@ Round counter starts at 1 the first time this step runs.
    4th time. Go to step 6 and report as **unresolved after 3 rounds**, not as a
    success.
 
-### 6. Report to the user — nothing is committed
+### 6. Commit, push, open the PR — only on an approve verdict
 
-Whatever the outcome (approved, blocked, or unresolved after 3 rounds), your final
-message to the user is the whole deliverable:
+If step 4/5 ended anywhere other than a clean `Verdict: approve`, skip straight to
+step 7 and report — never commit an unfinished or unresolved diff.
+
+On approve:
+
+1. `git status` — stage only the files this run actually touched (spec, source,
+   tests, and any `dayN/CLAUDE.md` or skill/agent doc this run edited). Never a
+   broad `git add -A`; a working tree can carry unrelated in-progress work from
+   something else the user is doing.
+2. Commit with a message describing the feature (not the mechanics of the
+   pipeline), following the repo's existing commit-message style and whatever
+   attribution trailer the session's own instructions specify.
+3. `git push -u origin feature/<slug>`. If this fails for lack of credentials
+   (no SSH key, no HTTPS auth configured in this environment) — stop here. The
+   commit stands locally; report exactly that (see step 7) and give the user the
+   push command to run themselves. Do not try to work around missing credentials.
+4. `gh pr create` against the repo's main branch, with a title under ~70 characters
+   and a body built from what the pipeline actually produced: a short summary of
+   the feature, the spec path, files changed, the test run result, and the
+   reviewer's verdict (plus any non-blocking nits it left, so they're visible to
+   whoever merges). If `gh` isn't authenticated, stop here the same way as a failed
+   push — report it and hand the user the `gh pr create` invocation (or the
+   compare URL) to run themselves.
+5. Never run anything that merges, approves, or auto-merges the PR. That is
+   the human's step, unconditionally, however smoothly the rest of the run went.
+
+### 7. Report to the user
+
+Whatever the outcome, your final message to the user is the whole deliverable:
 
 - the branch name and spec path,
 - files changed and files added (from implementer/tester),
 - the test run result,
 - the reviewer's final verdict and any outstanding comments,
 - for a blocked/unresolved run: exactly which step stopped it and what decision the
-  user needs to make.
-
-**Do not commit, push, or open a PR.** Per root `CLAUDE.md`, commits are the user's
-call; this skill only gets as far as a clean, reviewed working tree on
-`feature/<slug>`, ready for the user to inspect and commit themselves.
+  user needs to make,
+- for an approved run: the PR URL, or — if push/PR creation couldn't complete for
+  lack of credentials — the local commit that's ready and the exact command(s) the
+  user needs to run to push and open the PR themselves.
 
 ## Not my job
 
-- No merging, no marking anything "done" beyond reviewer's verdict — that stays a
-  human step.
+- No merging the PR, ever — that stays a human step no matter what.
 - No resolving an architect/implementer BLOCKING question myself — relay it.
 - No more than 3 reviewer↔implementer rounds — a 4th round is a human call, not an
   automation problem.
 - No touching a day other than the one named in step 0.
+- No committing/pushing/opening a PR on anything short of a clean `approve` —
+  a blocked or unresolved-after-3-rounds run stops at step 7, uncommitted.
+- No working around a missing `git push` credential or unauthenticated `gh` by
+  finding some other way to get the diff onto GitHub.

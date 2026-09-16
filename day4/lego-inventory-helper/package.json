@@ -10,8 +10,8 @@
     "start": "node --disable-warning=ExperimentalWarning server/index.ts",
     "serve": "npm run build && npm start",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --disable-warning=ExperimentalWarning 'src/**/*.test.ts'",
-    "test:coverage": "node --test --experimental-test-coverage --disable-warning=ExperimentalWarning 'src/**/*.test.ts'"
+    "test": "node --test --disable-warning=ExperimentalWarning 'src/**/*.test.ts' 'server/**/*.test.ts'",
+    "test:coverage": "node --test --experimental-test-coverage --disable-warning=ExperimentalWarning 'src/**/*.test.ts' 'server/**/*.test.ts'"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

@@ -1,4 +1,5 @@
 import { cn } from '../lib/cn'
+import { clampQuantity } from '../lib/quantity'
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
@@ -79,6 +80,47 @@ export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInput
 
 export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea className={cn(CONTROL, 'min-h-20 resize-y', className)} {...props} />
+}
+
+/** −/field/+ for a whole number of pieces. Clamps to integers ≥ 1 (and ≤ `max`). */
+export function QuantityInput({
+  value,
+  onChange,
+  max,
+  autoFocus,
+  onEnter,
+}: {
+  value: number
+  onChange: (value: number) => void
+  max?: number
+  autoFocus?: boolean
+  onEnter?: () => void
+}) {
+  const clamp = (n: number) => clampQuantity(n, max)
+  return (
+    <div className="flex items-center gap-2">
+      <Button size="sm" onClick={() => onChange(clamp(value - 1))} aria-label="One less">
+        −
+      </Button>
+      <div className="w-24">
+        <TextInput
+          type="number"
+          min={1}
+          max={max}
+          value={value}
+          autoFocus={autoFocus}
+          onChange={(e) => onChange(clamp(Number(e.target.value)))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onEnter?.()
+          }}
+          className="h-9 text-center"
+        />
+      </div>
+      <Button size="sm" onClick={() => onChange(clamp(value + 1))} aria-label="One more">
+        +
+      </Button>
+    </div>
+  )
 }
 
 export function Field({
