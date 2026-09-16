@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CompartmentGrid } from './CompartmentGrid'
 import { ColorSwatch } from './ColorSwatch'
 import { PieceIdentityFields } from './PieceIdentityFields'
-import { Button, Callout, Card, Chip, Field, TextArea, TextInput } from './ui'
+import { Button, Callout, Card, Chip, Field, QuantityInput, TextArea } from './ui'
 import { PieceImage } from './PieceImage'
 import { useInventory } from '../hooks/useInventory'
 import { plural } from '../lib/format'
@@ -368,38 +368,6 @@ function DetailsStep({
         Continue
       </Button>
     </Card>
-  )
-}
-
-export function QuantityInput({
-  value,
-  onChange,
-  max,
-}: {
-  value: number
-  onChange: (value: number) => void
-  max?: number
-}) {
-  const clamp = (n: number) => Math.min(max ?? Number.MAX_SAFE_INTEGER, Math.max(1, n))
-  return (
-    <div className="flex items-center gap-2">
-      <Button size="sm" onClick={() => onChange(clamp(value - 1))} aria-label="One less">
-        −
-      </Button>
-      <div className="w-24">
-        <TextInput
-          type="number"
-          min={1}
-          max={max}
-          value={value}
-          onChange={(e) => onChange(clamp(Number(e.target.value) || 1))}
-          className="h-9 text-center"
-        />
-      </div>
-      <Button size="sm" onClick={() => onChange(clamp(value + 1))} aria-label="One more">
-        +
-      </Button>
-    </div>
   )
 }
 

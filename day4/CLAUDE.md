@@ -141,7 +141,7 @@ cd lego-inventory-helper
 npm install
 npm run dev        # dev server + API on http://localhost:5173 (one process)
 npm run typecheck  # tsc --noEmit (checks src/ and server/ together)
-npm test           # the domain-logic suite, on Node's built-in runner (no dependency)
+npm test           # the test suite (src/ + server/), on Node's built-in runner (no dependency)
 npm run test:coverage   # same, with the built-in line/branch coverage report
 npm run build      # typecheck + build to dist/
 npm start          # production: serve dist/ + API on http://127.0.0.1:4173
@@ -161,13 +161,24 @@ Useful while debugging: the database is an ordinary SQLite file, so
 dependency at all**: Node strips the TypeScript directly, exactly the way `npm start` already runs
 `server/*.ts`. `npm run test:coverage` is the same run with the built-in coverage report.
 
-The suite deliberately covers **only the pure domain helpers** — `src/lib/inventory.ts` and
-`src/lib/matching.ts`, tested by `src/lib/*.test.ts` with shared builders in
-`src/lib/testFixtures.ts`. That is where every rule in the spec actually lives, and it is reachable
-without a server, a database or a browser. The tests sit next to the code (rather than in a `test/`
-folder) so `npm run typecheck` checks the fixtures against the real domain types — a fixture that
-drifts from `types.ts` fails the build instead of quietly testing a shape the app never produces.
-Nothing in the app imports them, so Vite never bundles them.
+It runs everything matching `src/**/*.test.ts` and `server/**/*.test.ts`, which today is three
+kinds of test, all reachable without a browser:
+
+- **The pure domain helpers** — `src/lib/inventory.ts`, `src/lib/matching.ts` and
+  `src/lib/quantity.ts` (`inventory.test.ts`, `matching.test.ts`, `quantity.test.ts`), with shared
+  builders in `src/lib/testFixtures.ts`. That is where most rules in the spec actually live.
+- **The client API contract** — `src/lib/store.test.ts` pins that an action posts the payload it
+  promises and republishes the whole snapshot the server answered with, `fetch` stubbed. It tests
+  the client half, not the server.
+- **A SQLite-backed server integration test** — `server/actions.test.ts` drives the real writes
+  against a throwaway database file via `LEGO_DB_PATH` (`node:sqlite`, still no dependency).
+
+The tests sit next to the code (rather than in a `test/` folder) so `npm run typecheck` checks the
+fixtures against the real domain types — a fixture that drifts from `types.ts` fails the build
+instead of quietly testing a shape the app never produces. Nothing in the app imports them, so Vite
+never bundles them. Note the helpers a test needs must live in a `.ts` module, not a `.tsx` one:
+Node's type stripping doesn't do JSX, which is why `QuantityInput`'s clamping is
+`src/lib/quantity.ts` rather than a local function in `ui.tsx`.
 
 Everything else is verified the way it was before: `npm run build` (which typechecks first, catching
 import/type errors) and driving the running app with a scripted headless browser (Playwright,
@@ -178,10 +189,11 @@ production server, and the one-time migration from the old browser-stored data (
 shaped like the very first version, missing the fields added later). All passed with no console
 errors.
 
-Covering `server/actions.ts` against a throwaway SQLite file (via `LEGO_DB_PATH`) needs no new
-dependency either and would be the next worthwhile step; the React components would need a DOM
-runner and a testing library, so **raise that tooling choice first** (per the root CLAUDE.md's
-"don't decide on external libraries without asking").
+`server/actions.test.ts` covers only the actions it was written for, so extending it to the rest of
+`server/actions.ts` (the restore, the legacy import, moves and deletes) is the next worthwhile step
+and needs no new dependency. The React components themselves would need a DOM runner and a testing
+library, so **raise that tooling choice first** (per the root CLAUDE.md's "don't decide on external
+libraries without asking").
 
 ## Architecture
 
@@ -206,6 +218,7 @@ lego-inventory-helper/
     catalog.ts             streams the CSVs into the catalog_* tables once; catalog SQL queries
     db.ts                  the file location, the schema, transaction helper, meta table
     csv.ts                 minimal quoted-field CSV splitter (no dependency)
+    actions.test.ts        the writes against a throwaway SQLite file (LEGO_DB_PATH)
   src/
     main.tsx               createRoot + <App/>
     App.tsx                boot gate (loading/error screen) then HashRouter + the route table
@@ -221,7 +234,10 @@ lego-inventory-helper/
       catalog.ts            catalog lookups over the API, memoized per part number
       legacyBrowserData.ts  reads (and then deletes) the previous IndexedDB storage
       ids.ts, format.ts, cn.ts   id/key helpers, date formatting, className joining
-      inventory.test.ts, matching.test.ts   the domain-logic suite (`npm test`)
+      quantity.ts           clampQuantity: the whole-number-≥-1 rule behind every quantity field
+      inventory.test.ts, matching.test.ts, quantity.test.ts   the domain-logic suite
+      store.test.ts         the client API contract of an action (posted payload + republished
+                            snapshot), with fetch stubbed
       testFixtures.ts       test-only snapshot/piece/unit builders, not imported by the app
     hooks/
       useInventory.ts       useSyncExternalStore bridge to the store
@@ -229,11 +245,13 @@ lego-inventory-helper/
       useDebouncedValue.ts  shared debounce
     components/
       AppShell.tsx          persistent header + mobile tab bar + <Outlet/>, Export, import warning
-      ui.tsx                Button/Card/Field/TextInput/TextArea/Chip/EmptyState/Callout/SectionTitle
+      ui.tsx                Button/Card/Field/TextInput/TextArea/QuantityInput/Chip/EmptyState/
+                            Callout/SectionTitle
       CompartmentGrid.tsx   one unit's grid; same component for the Home preview, the unit view
                             and the location/move pickers
-      CompartmentPanel.tsx  what's inside one compartment (extract, mark full, edit, delete);
-                            scrolls itself into view on phones, where it renders below the grid.
+      CompartmentPanel.tsx  what's inside one compartment (quick-add more units of a piece already
+                            there, extract, mark full, edit, delete); scrolls itself into view on
+                            phones, where it renders below the grid.
                             "Add a piece here" doesn't navigate: it asks the page to open the modal
       DrawerUnit3DPane.tsx  the 3D view's frame: the WebGL check, the React.lazy of the scene, the
                             "Loading 3D…" state and the "3D isn't available" fallback. Imports no
